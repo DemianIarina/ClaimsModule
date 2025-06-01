@@ -33,4 +33,10 @@ public class ClaimRepository : IClaimRepository
     {
         return await _context.Claims.FindAsync(id);
     }
+
+    public async Task UpdateAsync(Claim claim)
+    {
+        _context.Claims.Update(claim); 
+        await _context.SaveChangesAsync();
+    }
 }

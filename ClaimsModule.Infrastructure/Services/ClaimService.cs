@@ -49,7 +49,7 @@ public class ClaimService : IClaimService
         // Create claim entity
         Claim claimToCreate = new()
         {
-            Id = Guid.NewGuid(),
+            Id = Guid.NewGuid().ToString(),
             CustomerId = claim.CustomerId!,
             PolicyId = claim.PolicyId!,
             Description = claim.Description,

@@ -14,7 +14,7 @@ public class Decision
     /// <summary>
     /// Unique identifier of the decision.
     /// </summary>
-    public Guid? Id { get; set; }
+    public string? Id { get; set; }
 
     /// <summary>
     /// Optional explanation for the decision.
@@ -22,7 +22,7 @@ public class Decision
     public string? Reason { get; set; }
 
     /// <summary>
-    /// Who is responsable for the decision
+    /// Who is responsible for the decision
     /// </summary>
     public string? DecidedBy { get; set; }
 
@@ -38,7 +38,7 @@ public class Decision
     public string? Type
     {
         get => _type;
-        private set
+        set
         {
             if (!DecisionType.All.Contains(value))
                 throw new ArgumentException($"Invalid decision type: {value}");

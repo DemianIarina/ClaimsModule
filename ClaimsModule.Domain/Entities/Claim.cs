@@ -1,7 +1,6 @@
 ﻿using ClaimsModule.Domain.Enums;
 using System;
 using System.Linq;
-using System.Net.NetworkInformation;
 
 namespace ClaimsModule.Domain.Entities;
 
@@ -15,7 +14,7 @@ public class Claim
     /// <summary>
     /// Unique identifier of the claim.
     /// </summary>
-    public Guid? Id { get; set; }
+    public string? Id { get; set; }
 
     /// <summary>
     /// Identifier of the customer who submitted the claim.

@@ -21,4 +21,10 @@ public interface IClaimRepository
     /// <param name="id">The unique identifier of the claim.</param>
     /// <returns>The <see cref="Claim"/>, or null if no claim was found for the given ID.</returns>
     Task<Claim?> GetByIdAsync(string id);
+
+    /// <summary>
+    /// Updates an existing claim and any of its related entities (such as decisions or match results).
+    /// </summary>
+    /// <param name="claim">The <see cref="Claim"/> entity to be updated.</param>
+    Task UpdateAsync(Claim claim);
 }
