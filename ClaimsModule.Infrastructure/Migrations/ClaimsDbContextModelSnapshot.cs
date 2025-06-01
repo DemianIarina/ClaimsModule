@@ -24,15 +24,14 @@ namespace ClaimsModule.Infrastructure.Migrations
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Claim", b =>
                 {
-                    b.Property<Guid?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("CustomerId")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid?>("DecisionId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("DecisionId")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
@@ -44,8 +43,8 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.Property<string>("PolicyId")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid?>("PolicyMatchResultId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("PolicyMatchResultId")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -71,9 +70,8 @@ namespace ClaimsModule.Infrastructure.Migrations
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Decision", b =>
                 {
-                    b.Property<Guid?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime>("DecidedAt")
                         .HasColumnType("datetime(6)");
@@ -129,9 +127,8 @@ namespace ClaimsModule.Infrastructure.Migrations
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.PolicyMatchResult", b =>
                 {
-                    b.Property<Guid?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");

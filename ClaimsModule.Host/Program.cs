@@ -9,6 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using ClaimsModule.Infrastructure.Config;
+using ClaimsModule.Application.Processors;
+using ClaimsModule.Infrastructure.Processors;
 
 namespace ClaimsModule.Host
 {
@@ -26,12 +29,16 @@ namespace ClaimsModule.Host
             builder.Host.UseSerilog();
 
             // Add services to the container.
+            builder.Services.Configure<DecisionThresholds>(
+                builder.Configuration.GetSection("DecisionThresholds"));
+
+            builder.Services.AddScoped<IDecisionEngine, RuleBasedDecisionEngine>();
             builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
             builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
-            builder.Services.AddScoped<IClaimService, ClaimService>();
             builder.Services.AddDbContext<ClaimsDbContext>(options =>
                 options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
                     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
+            builder.Services.AddScoped<IClaimService, ClaimService>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

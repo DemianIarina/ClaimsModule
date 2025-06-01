@@ -53,7 +53,7 @@ public class ClaimController : ControllerBase
 
         return Accepted(claimUri, new CreateClaimResponse
         {
-            ClaimId = createdClaim.Id!.Value,
+            ClaimId = createdClaim.Id!,
             Status = createdClaim.Status!
         });
     }
@@ -70,7 +70,7 @@ public class ClaimController : ControllerBase
 
         return Ok(new CreateClaimResponse
         {
-            ClaimId = claim.Id!.Value,
+            ClaimId = claim.Id!,
             Status = claim.Status!
         });
     }

@@ -1,8 +1,10 @@
-﻿using ClaimsModule.Application.Repositories;
+﻿using ClaimsModule.Application.Processors;
+using ClaimsModule.Application.Repositories;
 using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Domain.Enums;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
@@ -18,6 +20,7 @@ public class ClaimService : IClaimService
 
     private readonly IClaimRepository _claimRepository;
     private readonly IPolicyRepository _policyRepository;
+    private readonly IServiceProvider _serviceProvider;
     //private readonly IDocumentRepository _documentRepository;
     //private readonly IFileStorageService _fileStorageService;
 
@@ -28,12 +31,14 @@ public class ClaimService : IClaimService
     /// <param name="policyRepository"></param>
     /// <param name="documentRepository"></param>
     /// <param name="fileStorageService"></param>
-    public ClaimService(IClaimRepository claimRepository, IPolicyRepository policyRepository, ILogger<ClaimService> logger)
+    public ClaimService(IClaimRepository claimRepository, IPolicyRepository policyRepository,
+        IServiceProvider serviceProvider, ILogger<ClaimService> logger)
     {
         _claimRepository = claimRepository;
         _policyRepository = policyRepository;
         //_documentRepository = documentRepository;
         //_fileStorageService = fileStorageService;
+        _serviceProvider = serviceProvider;
 
         _logger = logger;
     }
@@ -86,8 +91,18 @@ public class ClaimService : IClaimService
 
         try
         {
-            // Simulate background processing
-            await Task.Delay(2000);
+            using var scope = _serviceProvider.CreateScope();
+            var decisionEngine = scope.ServiceProvider.GetRequiredService<IDecisionEngine>();
+
+            // Simulate semantic analysis step
+            claim.PolicyMatchResult = new PolicyMatchResult
+            {
+                Id = Guid.NewGuid().ToString(),
+                SimilarityScore = 0.75f,
+            };
+
+            // Evaluate decision based on score
+            var decision = await decisionEngine.EvaluateAsync(claim);
 
             // TODO: actual semantic analysis, similarity score, decision logic
             _logger.LogInformation("Successfully processed claim {ClaimId}", claim.Id);

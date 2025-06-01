@@ -10,7 +10,7 @@ public class CreateClaimResponse
     /// <summary>
     /// The newly created claim ID.
     /// </summary>
-    public Guid ClaimId { get; set; }
+    public string ClaimId { get; set; } = string.Empty;
 
     /// <summary>
     /// Current status of the claim (e.g. Submitted).

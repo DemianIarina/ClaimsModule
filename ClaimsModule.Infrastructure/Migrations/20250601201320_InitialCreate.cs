@@ -18,7 +18,8 @@ namespace ClaimsModule.Infrastructure.Migrations
                 name: "Decision",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Reason = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     DecidedBy = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
@@ -49,10 +50,26 @@ namespace ClaimsModule.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "Policies",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ClientId = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Policies", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "PolicyMatchResult",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     SimilarityScore = table.Column<float>(type: "float", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
@@ -66,7 +83,8 @@ namespace ClaimsModule.Infrastructure.Migrations
                 name: "Claims",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CustomerId = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PolicyId = table.Column<string>(type: "longtext", nullable: true)
@@ -76,9 +94,11 @@ namespace ClaimsModule.Infrastructure.Migrations
                     SubmittedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     Status = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    PolicyMatchResultId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    PolicyMatchResultId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     GeneratedDocumentId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    DecisionId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                    DecisionId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
@@ -128,6 +148,9 @@ namespace ClaimsModule.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Claims");
+
+            migrationBuilder.DropTable(
+                name: "Policies");
 
             migrationBuilder.DropTable(
                 name: "Decision");

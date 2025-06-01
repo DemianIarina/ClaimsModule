@@ -13,7 +13,7 @@ public class PolicyMatchResult
     /// <summary>
     /// Unique identifier for the match result.
     /// </summary>
-    public Guid? Id { get; set; }
+    public string? Id { get; set; }
 
     /// <summary>
     /// Semantic similarity score (0.0000 to 1.0000).
