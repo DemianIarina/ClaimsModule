@@ -20,6 +20,11 @@ public class ClaimsDbContext : DbContext
     public DbSet<Claim> Claims => Set<Claim>();
 
     /// <summary>
+    /// Set of <see cref="Policy"/> etitites in the database.
+    /// </summary>
+    public DbSet<Policy> Policies => Set<Policy>();
+
+    /// <summary>
     /// Configures the EF Core model using the fluent API.
     /// </summary>
     /// <param name="modelBuilder">The builder used to construct the model for the context.</param>
@@ -75,6 +80,12 @@ public class ClaimsDbContext : DbContext
         {
             entity.HasKey(g => g.Id);
             entity.Property(g => g.FileUrl).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<Policy>(entity =>
+        {
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.ClientId).IsRequired();
         });
     }
 }

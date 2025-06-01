@@ -9,9 +9,9 @@ namespace ClaimsModule.Host.Contracts;
 public class CreateClaimRequest
 {
     /// <summary>
-    /// The ID of the customer submitting the claim.
+    /// The ID of the policy on which the claim need to be made.
     /// </summary>
-    public string CustomerId { get; set; } = string.Empty;
+    public string PolicyId { get; set; } = string.Empty;
 
     public DateTime IncidentDateTime { get; set; }
     public string IncidentLocation { get; set; } = string.Empty;

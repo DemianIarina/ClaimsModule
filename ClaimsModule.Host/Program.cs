@@ -19,6 +19,7 @@ namespace ClaimsModule.Host
 
             // Add services to the container.
             builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
+            builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
             builder.Services.AddScoped<IClaimService, ClaimService>();
             builder.Services.AddDbContext<ClaimsDbContext>(options =>
                 options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),

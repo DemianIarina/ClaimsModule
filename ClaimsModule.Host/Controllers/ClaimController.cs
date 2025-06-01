@@ -28,7 +28,7 @@ public class ClaimController : ControllerBase
     public async Task<ActionResult<CreateClaimResponse>> CreateClaim([FromForm] CreateClaimRequest request)
     {
         // Retrieve customer id
-        request.CustomerId = "SubjectInfo";
+        string cutomerId = "111";  //maybe from subjectInfo or something
 
         // Build semantic description text
         string damageDescription = BuildNarrativeText(request);
@@ -36,8 +36,9 @@ public class ClaimController : ControllerBase
         // Create claim entity
         Claim claim = new()
         {
-            CustomerId = request.CustomerId!,
+            CustomerId = cutomerId,
             Description = damageDescription,
+            PolicyId = request.PolicyId
         };
 
         Claim createdClaim = await _claimService.CreateClaimAsync(claim, request.Photos);

@@ -14,6 +14,7 @@ namespace ClaimsModule.Infrastructure.Services;
 public class ClaimService : IClaimService
 {
     private readonly IClaimRepository _claimRepository;
+    private readonly IPolicyRepository _policyRepository;
     //private readonly IDocumentRepository _documentRepository;
     //private readonly IFileStorageService _fileStorageService;
 
@@ -21,12 +22,14 @@ public class ClaimService : IClaimService
     /// Initializes a new instance of the <see cref="ClaimService"/> class.
     /// </summary>
     /// <param name="claimRepository"></param>
+    /// <param name="policyRepository"></param>
     /// <param name="documentRepository"></param>
     /// <param name="fileStorageService"></param>
     public ClaimService(
-        IClaimRepository claimRepository)
+        IClaimRepository claimRepository, IPolicyRepository policyRepository)
     {
         _claimRepository = claimRepository;
+        _policyRepository = policyRepository;
         //_documentRepository = documentRepository;
         //_fileStorageService = fileStorageService;
     }
@@ -34,21 +37,23 @@ public class ClaimService : IClaimService
     /// <inheritdoc />
     public async Task<Claim> CreateClaimAsync(Claim claim, IFormFileCollection? photos)
     {
-        // TODO: Retrieve customer policyId
-        string policyId = "policyId";
+        if (!await CheckPolicy(claim.PolicyId, claim.CustomerId))
+        {
+            throw new ArgumentException("The provided policy does not exist for this client.");
+        }
 
         // Create claim entity
         Claim claimToCreate = new()
         {
             Id = Guid.NewGuid(),
             CustomerId = claim.CustomerId!,
-            PolicyId = policyId!,
+            PolicyId = claim.PolicyId!,
             Description = claim.Description,
             SubmittedAt = DateTime.UtcNow,
             Status = ClaimStatus.Submitted
         };
 
-        await _claimRepository.AddAsync(claim);
+        await _claimRepository.AddAsync(claimToCreate);
 
         //// Upload damage photos and save references
         //if (photos != null)
@@ -61,6 +66,25 @@ public class ClaimService : IClaimService
         //    }
         //}
 
-        return claim;
+        return claimToCreate;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="policyId"></param>
+    /// <returns></returns>
+    private async Task<bool> CheckPolicy(string? policyId, string? clientId)
+    {
+        Policy? retrievedPolicy = await _policyRepository.GetByIdAsync(policyId!);
+        if (retrievedPolicy is not null)
+        {
+            if(retrievedPolicy.ClientId == clientId)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
