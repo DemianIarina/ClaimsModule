@@ -20,5 +20,5 @@ public interface IClaimRepository
     /// </summary>
     /// <param name="id">The unique identifier of the claim.</param>
     /// <returns>The <see cref="Claim"/>, or null if no claim was found for the given ID.</returns>
-    Task<Claim?> GetByIdAsync(Guid id);
+    Task<Claim?> GetByIdAsync(string id);
 }

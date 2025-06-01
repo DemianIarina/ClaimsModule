@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 namespace ClaimsModule.Host
 {
@@ -15,7 +16,14 @@ namespace ClaimsModule.Host
     {
         public static void Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console() // stream to stdout (K8s native)
+                .WriteTo.File("logs/claims-app-.log", rollingInterval: RollingInterval.Day) // local
+                .CreateLogger();
+
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Host.UseSerilog();
 
             // Add services to the container.
             builder.Services.AddScoped<IClaimRepository, ClaimRepository>();

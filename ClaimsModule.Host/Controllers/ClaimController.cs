@@ -1,6 +1,7 @@
 ﻿using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Host.Contracts;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -25,7 +26,10 @@ public class ClaimController : ControllerBase
     /// <returns>The claim that was created based on the provided information.</returns>
     [HttpPost]
     [Consumes("multipart/form-data")]
-    public async Task<ActionResult<CreateClaimResponse>> CreateClaim([FromForm] CreateClaimRequest request)
+    [ProducesResponseType(typeof(CreateClaimResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> CreateClaim([FromForm] CreateClaimRequest request)
     {
         // Retrieve customer id
         string cutomerId = "111";  //maybe from subjectInfo or something
@@ -43,7 +47,11 @@ public class ClaimController : ControllerBase
 
         Claim createdClaim = await _claimService.CreateClaimAsync(claim, request.Photos);
 
-        return CreatedAtAction(nameof(GetClaimById), new { id = createdClaim.Id }, new CreateClaimResponse
+        _ = Task.Run(() => _claimService.ProcessClaimAsync(createdClaim));
+
+        string? claimUri = Url.Action(nameof(GetClaimById), new { id = createdClaim.Id });
+
+        return Accepted(claimUri, new CreateClaimResponse
         {
             ClaimId = createdClaim.Id!.Value,
             Status = createdClaim.Status!
@@ -51,10 +59,20 @@ public class ClaimController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public IActionResult GetClaimById(Guid id)
+    public async Task<IActionResult> GetClaimById(string id)
     {
-        // optional implementation
-        return Ok();
+        var claim = await _claimService.GetClaimByIdAsync(id);
+
+        if (claim == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new CreateClaimResponse
+        {
+            ClaimId = claim.Id!.Value,
+            Status = claim.Status!
+        });
     }
 
     private string BuildNarrativeText(CreateClaimRequest req)

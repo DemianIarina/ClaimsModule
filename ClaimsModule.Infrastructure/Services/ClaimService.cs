@@ -3,6 +3,7 @@ using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Domain.Enums;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 
@@ -13,6 +14,8 @@ namespace ClaimsModule.Infrastructure.Services;
 /// </summary>
 public class ClaimService : IClaimService
 {
+    private readonly ILogger<ClaimService> _logger;
+
     private readonly IClaimRepository _claimRepository;
     private readonly IPolicyRepository _policyRepository;
     //private readonly IDocumentRepository _documentRepository;
@@ -25,13 +28,14 @@ public class ClaimService : IClaimService
     /// <param name="policyRepository"></param>
     /// <param name="documentRepository"></param>
     /// <param name="fileStorageService"></param>
-    public ClaimService(
-        IClaimRepository claimRepository, IPolicyRepository policyRepository)
+    public ClaimService(IClaimRepository claimRepository, IPolicyRepository policyRepository, ILogger<ClaimService> logger)
     {
         _claimRepository = claimRepository;
         _policyRepository = policyRepository;
         //_documentRepository = documentRepository;
         //_fileStorageService = fileStorageService;
+
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -55,7 +59,7 @@ public class ClaimService : IClaimService
 
         await _claimRepository.AddAsync(claimToCreate);
 
-        //// Upload damage photos and save references
+        //// TODO: Upload damage photos and save references
         //if (photos != null)
         //{
         //    foreach (IFormFile file in photos)
@@ -69,11 +73,36 @@ public class ClaimService : IClaimService
         return claimToCreate;
     }
 
+    /// <inheritdoc/>
+    public async Task<Claim?> GetClaimByIdAsync(string id)
+    {
+        return await _claimRepository.GetByIdAsync(id);
+    }
+
+    /// <inheritdoc/>
+    public async Task ProcessClaimAsync(Claim claim)
+    {
+        _logger.LogInformation("Started processing claim {ClaimId} at {Time}", claim.Id, DateTime.UtcNow);
+
+        try
+        {
+            // Simulate background processing
+            await Task.Delay(2000);
+
+            // TODO: actual semantic analysis, similarity score, decision logic
+            _logger.LogInformation("Successfully processed claim {ClaimId}", claim.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to process claim {ClaimId}", claim.Id);
+        }
+    }
+
     /// <summary>
-    /// 
+    /// Checks if the given policy belongs to the given client
     /// </summary>
-    /// <param name="policyId"></param>
-    /// <returns></returns>
+    /// <param name="policyId">The id of the policy to be check against the clients polices.</param>
+    /// <returns>True is the policy belongs to the client, False otherwise.</returns>
     private async Task<bool> CheckPolicy(string? policyId, string? clientId)
     {
         Policy? retrievedPolicy = await _policyRepository.GetByIdAsync(policyId!);

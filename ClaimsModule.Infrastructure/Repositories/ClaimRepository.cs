@@ -29,7 +29,7 @@ public class ClaimRepository : IClaimRepository
     }
 
     /// <inheritdoc />
-    public async Task<Claim?> GetByIdAsync(Guid id)
+    public async Task<Claim?> GetByIdAsync(string id)
     {
         return await _context.Claims.FindAsync(id);
     }

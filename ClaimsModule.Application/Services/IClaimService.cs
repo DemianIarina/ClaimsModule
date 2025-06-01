@@ -1,5 +1,6 @@
 ﻿using ClaimsModule.Domain.Entities;
 using Microsoft.AspNetCore.Http;
+using System;
 using System.Threading.Tasks;
 
 namespace ClaimsModule.Application.Services;
@@ -20,4 +21,17 @@ public interface IClaimService
     /// A <see cref="Claim"/> instance representing the newly created claim, including its assigned ID and initial status.
     /// </returns>
     Task<Claim> CreateClaimAsync(Claim claim, IFormFileCollection? photos);
+
+    /// <summary>
+    /// Retrieves a claim by id.
+    /// </summary>
+    /// <param name="id">The id of the claim that needs to be retrieved.</param>
+    /// <returns>A <see cref="Claim"/> instance representing the retrieved resource with the provided id, or mull
+    /// if the resource was not found.</returns>
+    Task<Claim?> GetClaimByIdAsync(string id);
+
+    /// <summary>
+    /// Starts processing logic for an insurance claim asynchronously.
+    /// </summary>
+    Task ProcessClaimAsync(Claim claim);
 }
