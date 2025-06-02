@@ -75,6 +75,8 @@ public class ClaimService : IClaimService
         //    }
         //}
 
+        _ = Task.Run(() => ProcessClaimAsync(claimToCreate));
+
         return claimToCreate;
     }
 
@@ -92,20 +94,39 @@ public class ClaimService : IClaimService
         try
         {
             using var scope = _serviceProvider.CreateScope();
+
+            // Resolve dependencies *inside this new scope*
             var decisionEngine = scope.ServiceProvider.GetRequiredService<IDecisionEngine>();
+            var claimRepository = scope.ServiceProvider.GetRequiredService<IClaimRepository>();
 
             // Simulate semantic analysis step
-            claim.PolicyMatchResult = new PolicyMatchResult
+            PolicyMatchResult policyMatchResult = new PolicyMatchResult
             {
                 Id = Guid.NewGuid().ToString(),
                 SimilarityScore = 0.75f,
             };
+            claim.PolicyMatchResult = policyMatchResult;
 
             // Evaluate decision based on score
-            var decision = await decisionEngine.EvaluateAsync(claim);
+            Decision decision = decisionEngine.EvaluateClaim(claim);
+            claim.Decision = decision;
 
             // TODO: actual semantic analysis, similarity score, decision logic
             _logger.LogInformation("Successfully processed claim {ClaimId}", claim.Id);
+
+            try
+            {
+                Claim? existingClaim = await claimRepository.GetByIdAsync(claim.Id!);
+                existingClaim!.PolicyMatchResult = policyMatchResult;
+                existingClaim!.Decision = decision;
+
+                await claimRepository.UpdateAsync(existingClaim);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could update the claim");
+                throw;
+            }
         }
         catch (Exception ex)
         {

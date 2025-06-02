@@ -47,8 +47,6 @@ public class ClaimController : ControllerBase
 
         Claim createdClaim = await _claimService.CreateClaimAsync(claim, request.Photos);
 
-        _ = Task.Run(() => _claimService.ProcessClaimAsync(createdClaim));
-
         string? claimUri = Url.Action(nameof(GetClaimById), new { id = createdClaim.Id });
 
         return Accepted(claimUri, new CreateClaimResponse

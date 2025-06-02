@@ -1,12 +1,10 @@
 ﻿using ClaimsModule.Application.Processors;
-using ClaimsModule.Application.Repositories;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Domain.Enums;
 using ClaimsModule.Infrastructure.Config;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Threading.Tasks;
 
 namespace ClaimsModule.Infrastructure.Processors;
 
@@ -17,20 +15,17 @@ public class RuleBasedDecisionEngine : IDecisionEngine
 {
     private readonly ILogger<RuleBasedDecisionEngine> _logger;
 
-    private readonly IClaimRepository _claimRepository;
     private readonly DecisionThresholds _thresholds;
 
-    public RuleBasedDecisionEngine(ILogger<RuleBasedDecisionEngine> logger, IClaimRepository claimRepository,
-        IOptions<DecisionThresholds> thresholds)
+    public RuleBasedDecisionEngine(ILogger<RuleBasedDecisionEngine> logger, IOptions<DecisionThresholds> thresholds)
     {
         _logger = logger;
 
-        _claimRepository = claimRepository;
         _thresholds = thresholds.Value;
     }
 
     /// <inheritdoc />
-    public async Task<Decision> EvaluateAsync(Claim claim)
+    public Decision EvaluateClaim(Claim claim)
     {
         float? score = claim.PolicyMatchResult!.SimilarityScore;
 
@@ -53,21 +48,6 @@ public class RuleBasedDecisionEngine : IDecisionEngine
             metDecision.Type = DecisionType.Rejected;
 
         _logger.LogInformation("Successfully evaluated claim {ClaimId} to decision {DecisionType}", claim.Id, metDecision.Type);
-
-        Claim? freshClaim = await _claimRepository.GetByIdAsync(claim.Id!);
-
-        freshClaim!.Decision = metDecision;
-        try
-        {
-            await _claimRepository.UpdateAsync(freshClaim);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not save decision {Decision} for claim {ClaimId}", metDecision, claim.Id);
-            throw;
-        }
-
-        _logger.LogInformation("Updated Claim {ClaimId} with the evaluated Decision {Decision}", claim.Id, metDecision.Type);
 
         return metDecision;
     }

@@ -18,5 +18,5 @@ public interface IDecisionEngine
     /// </summary>
     /// <param name="claim">The claim under review.</param>
     /// <returns>A <see cref="Decision"/> indicating approval, rejection, or escalation.</returns>
-    Task<Decision> EvaluateAsync(Claim claim);
+    Decision EvaluateClaim(Claim claim);
 }
