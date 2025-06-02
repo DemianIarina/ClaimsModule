@@ -10,7 +10,7 @@ public class GeneratedDocument
     /// <summary>
     /// Unique identifier of the document.
     /// </summary>
-    public Guid? Id { get; set; }
+    public string? Id { get; set; }
 
     /// <summary>
     /// Path to the stored file (MinIO S3 URL).

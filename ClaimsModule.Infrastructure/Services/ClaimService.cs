@@ -75,7 +75,7 @@ public class ClaimService : IClaimService
         //    }
         //}
 
-        _ = Task.Run(() => ProcessClaimAsync(claimToCreate));
+        _ = Task.Run(() => ProcessClaimAsync(claimToCreate.Id));
 
         return claimToCreate;
     }
@@ -87,9 +87,9 @@ public class ClaimService : IClaimService
     }
 
     /// <inheritdoc/>
-    public async Task ProcessClaimAsync(Claim claim)
+    public async Task ProcessClaimAsync(string claimId)
     {
-        _logger.LogInformation("Started processing claim {ClaimId} at {Time}", claim.Id, DateTime.UtcNow);
+        _logger.LogInformation("Started processing claim {ClaimId} at {Time}", claimId, DateTime.UtcNow);
 
         try
         {
@@ -98,28 +98,40 @@ public class ClaimService : IClaimService
             // Resolve dependencies *inside this new scope*
             var decisionEngine = scope.ServiceProvider.GetRequiredService<IDecisionEngine>();
             var claimRepository = scope.ServiceProvider.GetRequiredService<IClaimRepository>();
+            var docGenerator = scope.ServiceProvider.GetRequiredService<IDocumentGenerator>();
+
+            Claim? existingClaim = await claimRepository.GetByIdAsync(claimId!);
 
             // Simulate semantic analysis step
-            PolicyMatchResult policyMatchResult = new PolicyMatchResult
+            PolicyMatchResult policyMatchResult = new()
             {
                 Id = Guid.NewGuid().ToString(),
-                SimilarityScore = 0.75f,
+                SimilarityScore = 1.0f,
             };
-            claim.PolicyMatchResult = policyMatchResult;
+            existingClaim!.PolicyMatchResult = policyMatchResult;
 
             // Evaluate decision based on score
-            Decision decision = decisionEngine.EvaluateClaim(claim);
-            claim.Decision = decision;
+            Decision decision = decisionEngine.EvaluateClaim(existingClaim);
+            existingClaim.Decision = decision;
+
+            switch (decision.Type)
+            {
+                case DecisionType.Approved:
+                    GeneratedDocument doc = docGenerator.GenerateAsync(existingClaim);
+                    _logger.LogInformation("Document generated for approved claim {ClaimId} at {Path}", claimId, doc.FileUrl);
+                    break;
+
+                case DecisionType.Escalated:
+                case DecisionType.Rejected:
+                    _logger.LogInformation("No document generation required for decision {DecisionType}", decision.Type);
+                    break;
+            }
 
             // TODO: actual semantic analysis, similarity score, decision logic
-            _logger.LogInformation("Successfully processed claim {ClaimId}", claim.Id);
+            _logger.LogInformation("Successfully processed claim {ClaimId}", claimId);
 
             try
             {
-                Claim? existingClaim = await claimRepository.GetByIdAsync(claim.Id!);
-                existingClaim!.PolicyMatchResult = policyMatchResult;
-                existingClaim!.Decision = decision;
-
                 await claimRepository.UpdateAsync(existingClaim);
             }
             catch (Exception ex)
@@ -130,7 +142,7 @@ public class ClaimService : IClaimService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to process claim {ClaimId}", claim.Id);
+            _logger.LogError(ex, "Failed to process claim {ClaimId}", claimId);
         }
     }
 

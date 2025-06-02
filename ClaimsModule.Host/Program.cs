@@ -1,17 +1,18 @@
+using ClaimsModule.Application.Processors;
 using ClaimsModule.Application.Repositories;
 using ClaimsModule.Application.Services;
 using ClaimsModule.Infrastructure;
+using ClaimsModule.Infrastructure.Config;
+using ClaimsModule.Infrastructure.Processors;
 using ClaimsModule.Infrastructure.Repositories;
 using ClaimsModule.Infrastructure.Services;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using Serilog;
-using ClaimsModule.Infrastructure.Config;
-using ClaimsModule.Application.Processors;
-using ClaimsModule.Infrastructure.Processors;
 
 namespace ClaimsModule.Host
 {
@@ -33,6 +34,8 @@ namespace ClaimsModule.Host
                 builder.Configuration.GetSection("DecisionThresholds"));
 
             builder.Services.AddScoped<IDecisionEngine, RuleBasedDecisionEngine>();
+            QuestPDF.Settings.License = LicenseType.Community;
+            builder.Services.AddScoped<IDocumentGenerator, DocumentGenerator>();
             builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
             builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
             builder.Services.AddDbContext<ClaimsDbContext>(options =>

@@ -14,5 +14,5 @@ public interface IDocumentGenerator
     /// </summary>
     /// <param name="claim">The approved claim to generate a document for.</param>
     /// <returns>A <see cref="GeneratedDocument"/> with file URL and metadata.</returns>
-    Task<GeneratedDocument> GenerateAsync(Claim claim);
+    GeneratedDocument GenerateAsync(Claim claim);
 }

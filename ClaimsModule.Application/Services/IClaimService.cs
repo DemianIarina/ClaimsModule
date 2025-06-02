@@ -33,5 +33,6 @@ public interface IClaimService
     /// <summary>
     /// Starts processing logic for an insurance claim asynchronously.
     /// </summary>
-    Task ProcessClaimAsync(Claim claim);
+    /// <param name="id">Id of the claim that needs to be processed</param>
+    Task ProcessClaimAsync(string id);
 }
