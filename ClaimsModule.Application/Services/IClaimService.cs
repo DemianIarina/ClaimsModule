@@ -13,14 +13,12 @@ public interface IClaimService
     /// <summary>
     /// Creates a new claim from structured input, including file attachments and metadata.
     /// </summary>
-    /// <param name="claim"> An object containing the User Id and detailed incident information
-    /// (e.g. time, location, vehicle condition) as a narrative descriptions
-    /// </param>
+    /// <param name="policyId">Id of the <see cref="Policy"/> on which the claim is made.</param>
+    /// <param name="incidentTimestamp">Timestamp when the incident on the claim happened.</param>
+    /// <param name="description">Narrative description of what happend in the incident.</param>
     /// <param name="photos">Optional photos provided of the damage.</param>
-    /// <returns>
-    /// A <see cref="Claim"/> instance representing the newly created claim, including its assigned ID and initial status.
-    /// </returns>
-    Task<Claim> CreateClaimAsync(Claim claim, IFormFileCollection? photos);
+    /// <returns></returns>
+    Task<Claim> CreateClaimAsync(string policyId, DateTime incidentTimestamp, string description, IFormFileCollection? photos);
 
     /// <summary>
     /// Retrieves a claim by id.

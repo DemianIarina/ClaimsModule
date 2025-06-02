@@ -44,23 +44,25 @@ public class ClaimService : IClaimService
     }
 
     /// <inheritdoc />
-    public async Task<Claim> CreateClaimAsync(Claim claim, IFormFileCollection? photos)
+    public async Task<Claim> CreateClaimAsync(string policyId, DateTime incidentTimestamp, string description, IFormFileCollection? photos)
     {
-        if (!await CheckPolicy(claim.PolicyId, claim.CustomerId))
-        {
-            throw new ArgumentException("The provided policy does not exist for this client.");
-        }
+        Policy? retrievedPolicy = await _policyRepository.GetByIdAsync(policyId!);
 
         // Create claim entity
         Claim claimToCreate = new()
         {
             Id = Guid.NewGuid().ToString(),
-            CustomerId = claim.CustomerId!,
-            PolicyId = claim.PolicyId!,
-            Description = claim.Description,
+            IncidentTimestamp = incidentTimestamp,
+            Policy = retrievedPolicy,
+            Description = description,
             SubmittedAt = DateTime.UtcNow,
             Status = ClaimStatus.Submitted
         };
+
+        if(!ValidateClaimMetadata(retrievedPolicy, claimToCreate))
+        {
+            throw new ArgumentException("The claim is not valid for policy {PolicyId}. Could not create.", policyId);
+        }
 
         await _claimRepository.AddAsync(claimToCreate);
 
@@ -147,21 +149,21 @@ public class ClaimService : IClaimService
     }
 
     /// <summary>
-    /// Checks if the given policy belongs to the given client
+    /// Validates the metadata of a claim by ensuring it meets policy-related criteria.
     /// </summary>
-    /// <param name="policyId">The id of the policy to be check against the clients polices.</param>
-    /// <returns>True is the policy belongs to the client, False otherwise.</returns>
-    private async Task<bool> CheckPolicy(string? policyId, string? clientId)
+    /// <param name="policy">The insurance policy associated with the claim.</param>
+    /// <param name="claim">The claim containing metadata to be validated, such as the incident timestamp.</param>
+    /// <returns>True if the claim's incident timestamp falls within the policy's validity period; otherwise, False</returns>
+    private bool ValidateClaimMetadata(Policy? policy, Claim claim)
     {
-        Policy? retrievedPolicy = await _policyRepository.GetByIdAsync(policyId!);
-        if (retrievedPolicy is not null)
+        if(policy is null)
         {
-            if(retrievedPolicy.ClientId == clientId)
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        bool isWithinValidityPeriod = claim.IncidentTimestamp >= policy.ValidFrom &&
+            claim.IncidentTimestamp <= policy.ValidTo;
+
+        return isWithinValidityPeriod;
     }
 }

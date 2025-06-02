@@ -20,9 +20,14 @@ public class ClaimsDbContext : DbContext
     public DbSet<Claim> Claims => Set<Claim>();
 
     /// <summary>
-    /// Set of <see cref="Policy"/> etitites in the database.
+    /// Set of <see cref="Policy"/> entities in the database.
     /// </summary>
     public DbSet<Policy> Policies => Set<Policy>();
+
+    /// <summary>
+    /// Set of <see cref="Customer"/> entities in the database.
+    /// </summary>
+    public DbSet<Customer> Customers => Set<Customer>();
 
     /// <summary>
     /// Configures the EF Core model using the fluent API.
@@ -36,6 +41,14 @@ public class ClaimsDbContext : DbContext
         modelBuilder.Entity<Claim>(entity =>
         {
             entity.HasKey(c => c.Id);
+
+            // Many-to-One: Claim → Policy
+            entity.HasOne(c => c.Policy)
+              .WithMany() // You can later add `ICollection<Claim> Claims` in Policy if needed
+              .HasForeignKey("PolicyId")
+              .IsRequired()
+              .OnDelete(DeleteBehavior.Restrict);
+
 
             // One-to-one: Claim -> PolicyMatchResult
             entity.HasOne(c => c.PolicyMatchResult)
@@ -85,7 +98,23 @@ public class ClaimsDbContext : DbContext
         modelBuilder.Entity<Policy>(entity =>
         {
             entity.HasKey(p => p.Id);
-            entity.Property(p => p.ClientId).IsRequired();
+
+            // Many-to-One: Policy → Customer
+            entity.HasOne(p => p.Customer)
+                  .WithMany(c => c.Policies)
+                  .HasForeignKey("CustomerId")
+                  .IsRequired()
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(p => p.CarBrand).HasMaxLength(100);
+            entity.Property(p => p.CarModel).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.HasKey(c => c.Id);
+            entity.Property(c => c.Name).HasMaxLength(150);
+            entity.Property(c => c.Email).HasMaxLength(150);
         });
     }
 }

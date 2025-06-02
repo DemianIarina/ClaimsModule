@@ -35,7 +35,7 @@ namespace ClaimsModule.Host
 
             builder.Services.AddScoped<IDecisionEngine, RuleBasedDecisionEngine>();
             QuestPDF.Settings.License = LicenseType.Community;
-            builder.Services.AddScoped<IDocumentGenerator, DocumentGenerator>();
+            builder.Services.AddScoped<IDocumentGenerator, AuthorizationDocumentGenerator>();
             builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
             builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
             builder.Services.AddDbContext<ClaimsDbContext>(options =>

@@ -31,21 +31,12 @@ public class ClaimController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateClaim([FromForm] CreateClaimRequest request)
     {
-        // Retrieve customer id
-        string cutomerId = "111";  //maybe from subjectInfo or something
-
         // Build semantic description text
         string damageDescription = BuildNarrativeText(request);
 
         // Create claim entity
-        Claim claim = new()
-        {
-            CustomerId = cutomerId,
-            Description = damageDescription,
-            PolicyId = request.PolicyId
-        };
-
-        Claim createdClaim = await _claimService.CreateClaimAsync(claim, request.Photos);
+        Claim createdClaim = await _claimService.CreateClaimAsync(request.PolicyId, request.IncidentDateTime,
+            damageDescription, request.Photos);
 
         string? claimUri = Url.Action(nameof(GetClaimById), new { id = createdClaim.Id });
 

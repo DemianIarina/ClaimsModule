@@ -17,14 +17,14 @@ public class Claim
     public string? Id { get; set; }
 
     /// <summary>
-    /// Identifier of the customer who submitted the claim.
+    /// Timestamp when the incident on the claim happened.
     /// </summary>
-    public string? CustomerId { get; set; }
+    public DateTime? IncidentTimestamp { get; set; } 
 
     /// <summary>
-    /// Identifier of the matched insurance policy.
+    /// The policy matched with the claim.
     /// </summary>
-    public string? PolicyId { get; set; }
+    public Policy? Policy { get; set; }
 
     /// <summary>
     /// Free-text description of the damage or event.

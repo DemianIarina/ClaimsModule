@@ -1,25 +1,45 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ClaimsModule.Domain.Entities;
 
 /// <summary>
-/// Represents an insurance policy that can be associated with a claim.
-/// Each policy belongs to a single client, and a client may own multiple policies.
+/// Represents an insurance policy.
 /// </summary>
 public class Policy
 {
     /// <summary>
-    /// The unique identifier of the policy.
+    /// Unique identifier of the policy.
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public string? Id { get; set; }
 
     /// <summary>
-    /// The identifier of the client who owns this policy.
+    /// The plate number of the cars
     /// </summary>
-    public string ClientId { get; set; } = string.Empty;
+    public string? CarPlateNumber { get; set; }
+
+    /// <summary>
+    /// Brand of the car covered by the policy (e.g., Toyota, Ford).
+    /// </summary>
+    public string? CarBrand { get; set; }
+
+    /// <summary>
+    /// Model of the car covered by the policy (e.g., Corolla, Focus).
+    /// </summary>
+    public string? CarModel { get; set; }
+
+    /// <summary>
+    /// The start date of the policy's validity period.
+    /// </summary>
+    public DateTime ValidFrom { get; set; }
+
+    /// <summary>
+    /// The end date of the policy's validity period.
+    /// </summary>
+    public DateTime ValidTo { get; set; }
+
+    /// <summary>
+    /// The customer to whom the policy is assigned.
+    /// </summary>
+    public Customer? Customer { get; set; }
 }
 

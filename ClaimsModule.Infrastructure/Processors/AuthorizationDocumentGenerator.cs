@@ -12,12 +12,12 @@ using System;
 
 namespace ClaimsModule.Infrastructure.Processors;
 
-public class DocumentGenerator : IDocumentGenerator
+public class AuthorizationDocumentGenerator : IDocumentGenerator
 {
-    private readonly ILogger<DocumentGenerator> _logger;
+    private readonly ILogger<AuthorizationDocumentGenerator> _logger;
     private const string OutputDir = "GeneratedDocs";
 
-    public DocumentGenerator(ILogger<DocumentGenerator> logger)
+    public AuthorizationDocumentGenerator(ILogger<AuthorizationDocumentGenerator> logger)
     {
         _logger = logger;
         Directory.CreateDirectory(OutputDir);
@@ -64,10 +64,10 @@ public class DocumentGenerator : IDocumentGenerator
 
                     // Policyholder Information
                     col.Item().Text("Policyholder Information").FontSize(12).Bold().ParagraphSpacing(10);
-                    col.Item().Text("Name: John Doe");
-                    col.Item().Text("Contact: johndoe@example.com");
-                    col.Item().Text($"Policy ID: {claim.PolicyId}");
-                    col.Item().Text($"Vehicle Plate Number: {"N/A"}"); //TODO: add vehicle info
+                    col.Item().Text($"Name: {claim.Policy!.Customer!.Name}");
+                    col.Item().Text($"Contact: {claim.Policy.Customer.Email}");
+                    col.Item().Text($"Policy ID: {claim.Policy.Id}");
+                    col.Item().Text($"Vehicle Plate Number: {claim.Policy.CarPlateNumber}");
 
                     col.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                     col.Item().PaddingBottom(5);
@@ -77,8 +77,6 @@ public class DocumentGenerator : IDocumentGenerator
                     col.Item().Text($"Claim ID: {claim.Id}");
                     col.Item().Text($"Description: {claim.Description}");
                     col.Item().Text($"Submitted At: {claim.SubmittedAt:yyyy-MM-dd}");
-                    col.Item().Text("Damage Type: External Damage"); // Placeholder
-                    col.Item().Text("Estimated Cost: Pending Assessment");
 
                     col.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                     col.Item().PaddingBottom(5);
@@ -86,7 +84,6 @@ public class DocumentGenerator : IDocumentGenerator
                     // Authorization Details
                     col.Item().Text("Authorization Details").FontSize(12).Bold().ParagraphSpacing(10);
                     col.Item().Text("Authorized Garage: Caring Auto Repair");
-                    col.Item().Text("Scope: Bodywork repairs only – mechanical issues excluded");
                     col.Item().Text("Valid For: 30 days from issuance");
                     col.Item().Text("Instructions: Present valid ID. Garage must invoice insurer.");
 
