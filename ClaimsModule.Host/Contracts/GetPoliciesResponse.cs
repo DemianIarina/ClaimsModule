@@ -6,7 +6,7 @@ namespace ClaimsModule.Host.Contracts;
 /// Represents a data transfer object that encapsulates a customer and their associated insurance policies.
 /// Used for API responses that return both customer details and related policy data.
 /// </summary>
-public class CustomerWithPoliciesDto
+public class GetPoliciesResponse
 {
     /// <summary>
     /// Customer information

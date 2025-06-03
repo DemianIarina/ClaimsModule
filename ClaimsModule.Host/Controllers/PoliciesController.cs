@@ -29,9 +29,9 @@ public class PoliciesController : ControllerBase
     /// <param name="customerId">The ID of the customer whose policies are to be retrieved.</param>
     /// <returns>A composite object containing customer information and associated policies.</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(CustomerWithPoliciesDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(GetPoliciesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<CustomerWithPoliciesDto>>> GetPoliciesForCustomer(string customerId)
+    public async Task<ActionResult<List<GetPoliciesResponse>>> GetPoliciesForCustomer(string customerId)
     {
         Customer customer;
         List<Policy> policies;
@@ -45,7 +45,7 @@ public class PoliciesController : ControllerBase
             return NotFound($"Could not find customer with id {customerId}");
         }
 
-        CustomerWithPoliciesDto response = new()
+        GetPoliciesResponse response = new()
         {
             Customer = new CustomerDto
             {
