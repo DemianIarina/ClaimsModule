@@ -38,9 +38,11 @@ namespace ClaimsModule.Host
             builder.Services.AddScoped<IDocumentGenerator, AuthorizationDocumentGenerator>();
             builder.Services.AddScoped<IClaimRepository, ClaimRepository>();
             builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
+            builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
             builder.Services.AddDbContext<ClaimsDbContext>(options =>
                 options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
                     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
+            builder.Services.AddScoped<IPolicyService, PolicyService>();
             builder.Services.AddScoped<IClaimService, ClaimService>();
 
             builder.Services.AddControllers();

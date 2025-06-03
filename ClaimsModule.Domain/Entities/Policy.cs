@@ -13,6 +13,11 @@ public class Policy
     public string? Id { get; set; }
 
     /// <summary>
+    /// Number of the policy, used to externally identify the policy
+    /// </summary>
+    public string? PolicyNumber { get; set; }
+
+    /// <summary>
     /// The plate number of the cars
     /// </summary>
     public string? CarPlateNumber { get; set; }
@@ -41,5 +46,10 @@ public class Policy
     /// The customer to whom the policy is assigned.
     /// </summary>
     public Customer? Customer { get; set; }
+
+    /// <summary>
+    /// Path to the stored file.
+    /// </summary>
+    public string? FileUrl { get; set; }
 }
 

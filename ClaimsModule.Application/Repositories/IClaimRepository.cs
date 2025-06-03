@@ -1,11 +1,10 @@
 ﻿using ClaimsModule.Domain.Entities;
-using System;
 using System.Threading.Tasks;
 
 namespace ClaimsModule.Application.Repositories;
 
 /// <summary>
-/// Defines data access operations for claims entities.
+/// Provides data access operations for  claims entities.
 /// </summary>
 public interface IClaimRepository
 {

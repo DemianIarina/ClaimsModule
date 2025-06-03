@@ -15,6 +15,23 @@ namespace ClaimsModule.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "Customers",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Name = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Email = table.Column<string>(type: "varchar(150)", maxLength: 150, nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Customers", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Decision",
                 columns: table => new
                 {
@@ -38,7 +55,8 @@ namespace ClaimsModule.Infrastructure.Migrations
                 name: "GeneratedDocument",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     FileUrl = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
@@ -46,21 +64,6 @@ namespace ClaimsModule.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_GeneratedDocument", x => x.Id);
-                })
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.CreateTable(
-                name: "Policies",
-                columns: table => new
-                {
-                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ClientId = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Policies", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -80,14 +83,44 @@ namespace ClaimsModule.Infrastructure.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "Policies",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CarPlateNumber = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CarBrand = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CarModel = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ValidFrom = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    ValidTo = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CustomerId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FileUrl = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Policies", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Policies_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "Claims",
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CustomerId = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    PolicyId = table.Column<string>(type: "longtext", nullable: true)
+                    IncidentTimestamp = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    PolicyId = table.Column<string>(type: "varchar(255)", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -96,7 +129,8 @@ namespace ClaimsModule.Infrastructure.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PolicyMatchResultId = table.Column<string>(type: "varchar(255)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    GeneratedDocumentId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    GeneratedDocumentId = table.Column<string>(type: "varchar(255)", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     DecisionId = table.Column<string>(type: "varchar(255)", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4")
                 },
@@ -115,6 +149,12 @@ namespace ClaimsModule.Infrastructure.Migrations
                         principalTable: "GeneratedDocument",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Claims_Policies_PolicyId",
+                        column: x => x.PolicyId,
+                        principalTable: "Policies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Claims_PolicyMatchResult_PolicyMatchResultId",
                         column: x => x.PolicyMatchResultId,
@@ -137,10 +177,20 @@ namespace ClaimsModule.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Claims_PolicyId",
+                table: "Claims",
+                column: "PolicyId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Claims_PolicyMatchResultId",
                 table: "Claims",
                 column: "PolicyMatchResultId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Policies_CustomerId",
+                table: "Policies",
+                column: "CustomerId");
         }
 
         /// <inheritdoc />
@@ -150,16 +200,19 @@ namespace ClaimsModule.Infrastructure.Migrations
                 name: "Claims");
 
             migrationBuilder.DropTable(
-                name: "Policies");
-
-            migrationBuilder.DropTable(
                 name: "Decision");
 
             migrationBuilder.DropTable(
                 name: "GeneratedDocument");
 
             migrationBuilder.DropTable(
+                name: "Policies");
+
+            migrationBuilder.DropTable(
                 name: "PolicyMatchResult");
+
+            migrationBuilder.DropTable(
+                name: "Customers");
         }
     }
 }

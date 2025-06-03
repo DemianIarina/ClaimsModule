@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClaimsModule.Infrastructure.Migrations
 {
     [DbContext(typeof(ClaimsDbContext))]
-    [Migration("20250601201320_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250603175526_AddPolicyNumber")]
+    partial class AddPolicyNumber
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -30,9 +30,6 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("CustomerId")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("DecisionId")
                         .HasColumnType("varchar(255)");
 
@@ -40,11 +37,15 @@ namespace ClaimsModule.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
 
-                    b.Property<Guid?>("GeneratedDocumentId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("GeneratedDocumentId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("IncidentTimestamp")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("PolicyId")
-                        .HasColumnType("longtext");
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("PolicyMatchResultId")
                         .HasColumnType("varchar(255)");
@@ -65,10 +66,32 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.HasIndex("GeneratedDocumentId")
                         .IsUnique();
 
+                    b.HasIndex("PolicyId");
+
                     b.HasIndex("PolicyMatchResultId")
                         .IsUnique();
 
                     b.ToTable("Claims");
+                });
+
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.Customer", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Customers");
                 });
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Decision", b =>
@@ -98,9 +121,8 @@ namespace ClaimsModule.Infrastructure.Migrations
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.GeneratedDocument", b =>
                 {
-                    b.Property<Guid?>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -119,11 +141,36 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("ClientId")
-                        .IsRequired()
+                    b.Property<string>("CarBrand")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("CarModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("CarPlateNumber")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("FileUrl")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PolicyNumber")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ValidTo")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
 
                     b.ToTable("Policies");
                 });
@@ -156,6 +203,12 @@ namespace ClaimsModule.Infrastructure.Migrations
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "GeneratedDocumentId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("ClaimsModule.Domain.Entities.Policy", "Policy")
+                        .WithMany()
+                        .HasForeignKey("PolicyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("ClaimsModule.Domain.Entities.PolicyMatchResult", "PolicyMatchResult")
                         .WithOne()
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "PolicyMatchResultId")
@@ -165,7 +218,25 @@ namespace ClaimsModule.Infrastructure.Migrations
 
                     b.Navigation("GeneratedDocument");
 
+                    b.Navigation("Policy");
+
                     b.Navigation("PolicyMatchResult");
+                });
+
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.Policy", b =>
+                {
+                    b.HasOne("ClaimsModule.Domain.Entities.Customer", "Customer")
+                        .WithMany("Policies")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.Customer", b =>
+                {
+                    b.Navigation("Policies");
                 });
 #pragma warning restore 612, 618
         }

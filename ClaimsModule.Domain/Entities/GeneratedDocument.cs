@@ -13,7 +13,7 @@ public class GeneratedDocument
     public string? Id { get; set; }
 
     /// <summary>
-    /// Path to the stored file (MinIO S3 URL).
+    /// Path to the stored file.
     /// </summary>
     public string? FileUrl { get; set; }
 
