@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace ClaimsModule.Host.Contracts;
+﻿namespace ClaimsModule.Host.Contracts;
 
 /// <summary>
 /// Output DTO returned after creating a claim.
 /// </summary>
-public class CreateClaimResponse
+public class ClaimResponse
 {
     /// <summary>
     /// The newly created claim ID.

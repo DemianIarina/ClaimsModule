@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using System;
 using ClaimsModule.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace ClaimsModule.Infrastructure.Repositories;
 
@@ -31,7 +32,13 @@ public class ClaimRepository : IClaimRepository
     /// <inheritdoc />
     public async Task<Claim?> GetByIdAsync(string id)
     {
-        return await _context.Claims.FindAsync(id);
+        return await _context.Claims
+            .Include(c => c.Policy)
+                .ThenInclude(p => p!.Customer)
+            .Include(c => c.Decision)
+            .Include(c => c.GeneratedDocument)
+            .Include(c => c.PolicyMatchResult)
+            .FirstOrDefaultAsync(c => c.Id == id);
     }
 
     public async Task UpdateAsync(Claim claim)

@@ -3,6 +3,7 @@ using ClaimsModule.Domain.Entities;
 using ClaimsModule.Host.Contracts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
 
@@ -26,7 +27,7 @@ public class ClaimController : ControllerBase
     /// <returns>The claim that was created based on the provided information.</returns>
     [HttpPost]
     [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(CreateClaimResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ClaimResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CreateClaim([FromForm] CreateClaimRequest request)
@@ -40,7 +41,7 @@ public class ClaimController : ControllerBase
 
         string? claimUri = Url.Action(nameof(GetClaimById), new { id = createdClaim.Id });
 
-        return Accepted(claimUri, new CreateClaimResponse
+        return Accepted(claimUri, new ClaimResponse
         {
             ClaimId = createdClaim.Id!,
             Status = createdClaim.Status!
@@ -57,11 +58,38 @@ public class ClaimController : ControllerBase
             return NotFound();
         }
 
-        return Ok(new CreateClaimResponse
+        return Ok(new ClaimResponse
         {
             ClaimId = claim.Id!,
             Status = claim.Status!
         });
+    }
+
+    /// <summary>
+    /// Manually approves or rejects a claim after manual review.
+    /// </summary>
+    /// <param name="id">The ID of the claim evaluated.</param>
+    /// <param name="request">The manual decision input.</param>
+    /// <returns>HTTP 204 No Content on success or 404 if not found.</returns>
+    [HttpPost("{id}/evaluate")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ManuallyEvaluateClaim(string id, [FromBody] ManualEvaluationRequest request)
+    {
+        try
+        {
+            await _claimService.ProcessClaimManuallyAsync(id, request.Approved, request.EmployeeId);
+            return Ok();
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound($"No claim found with ID {id}");
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     private string BuildNarrativeText(CreateClaimRequest req)

@@ -1,14 +1,11 @@
 ﻿using ClaimsModule.Application.Processors;
 using ClaimsModule.Domain.Entities;
 using Microsoft.Extensions.Logging;
-using System.IO;
-using System.Reflection.Metadata;
-using System.Threading.Tasks;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
-using Document = QuestPDF.Fluent.Document;
 using System;
+using System.IO;
+using Document = QuestPDF.Fluent.Document;
 
 namespace ClaimsModule.Infrastructure.Processors;
 
@@ -66,8 +63,9 @@ public class AuthorizationDocumentGenerator : IDocumentGenerator
                     col.Item().Text("Policyholder Information").FontSize(12).Bold().ParagraphSpacing(10);
                     col.Item().Text($"Name: {claim.Policy!.Customer!.Name}");
                     col.Item().Text($"Contact: {claim.Policy.Customer.Email}");
-                    col.Item().Text($"Policy ID: {claim.Policy.Id}");
+                    col.Item().Text($"Policy Number: {claim.Policy.PolicyNumber}");
                     col.Item().Text($"Vehicle Plate Number: {claim.Policy.CarPlateNumber}");
+                    col.Item().Text($"Car: {claim.Policy.CarBrand} {claim.Policy.CarModel}");
 
                     col.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                     col.Item().PaddingBottom(5);

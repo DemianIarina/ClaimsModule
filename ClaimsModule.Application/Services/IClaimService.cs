@@ -32,5 +32,13 @@ public interface IClaimService
     /// Starts processing logic for an insurance claim asynchronously.
     /// </summary>
     /// <param name="id">Id of the claim that needs to be processed</param>
-    Task ProcessClaimAsync(string id);
+    Task ProcessClaimAutomaticallyAsync(string id);
+
+    /// <summary>
+    /// Processes a claim based on manual evaluation by an employee.
+    /// </summary>
+    /// <param name="claimId">The identifier of the claim to process.</param>
+    /// <param name="approved">Indicates whether the claim is approved or rejected.</param>
+    /// <param name="employeeId">The identifier of the employee performing the evaluation.</param>
+    Task ProcessClaimManuallyAsync(string claimId, bool approved, string employeeId);
 }

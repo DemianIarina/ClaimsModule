@@ -3,10 +3,12 @@ using ClaimsModule.Application.Repositories;
 using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Domain.Enums;
+using ClaimsModule.Infrastructure.Processors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ClaimsModule.Infrastructure.Services;
@@ -77,7 +79,7 @@ public class ClaimService : IClaimService
         //    }
         //}
 
-        _ = Task.Run(() => ProcessClaimAsync(claimToCreate.Id));
+        _ = Task.Run(() => ProcessClaimAutomaticallyAsync(claimToCreate.Id));
 
         return claimToCreate;
     }
@@ -88,63 +90,100 @@ public class ClaimService : IClaimService
         return await _claimRepository.GetByIdAsync(id);
     }
 
-    /// <inheritdoc/>
-    public async Task ProcessClaimAsync(string claimId)
+    public async Task ProcessClaimAutomaticallyAsync(string claimId)
     {
         _logger.LogInformation("Started processing claim {ClaimId} at {Time}", claimId, DateTime.UtcNow);
+        
+        // Resolve dependencies *inside this new scope*
+        using var scope = _serviceProvider.CreateScope();
+        var decisionEngine = scope.ServiceProvider.GetRequiredService<IDecisionEngine>();
+        var claimRepository = scope.ServiceProvider.GetRequiredService<IClaimRepository>();
+        IDocumentGenerator documentGenerator = scope.ServiceProvider.GetRequiredService<IDocumentGenerator>();
 
+        Claim? claim = await claimRepository.GetByIdAsync(claimId!);
+
+        if (claim == null)
+        {
+            _logger.LogDebug("Claim not found for ID: {ClaimId}", claimId);
+            throw new KeyNotFoundException($"Claim {claimId} not found");
+        }
+
+        // TODO: actual semantic analysis, similarity score, decision logic
+        PolicyMatchResult policyMatchResult = new()
+        {
+            Id = Guid.NewGuid().ToString(),
+            SimilarityScore = 0.5f,
+        };
+        claim!.PolicyMatchResult = policyMatchResult;
+
+        // Evaluate decision based on score
+        Decision decision = decisionEngine.EvaluateClaim(claim);
+        claim.Decision = decision;
+
+        await FinaliseClaimPorcessing(claim, claimRepository, documentGenerator);
+    }
+
+    public async Task ProcessClaimManuallyAsync(string claimId, bool approved, string employeeId)
+    {
+        // Resolve dependencies *inside this new scope*
+        using var scope = _serviceProvider.CreateScope();
+        var claimRepository = scope.ServiceProvider.GetRequiredService<IClaimRepository>();
+        IDocumentGenerator documentGenerator = scope.ServiceProvider.GetRequiredService<IDocumentGenerator>();
+
+        Claim? claim = await claimRepository.GetByIdAsync(claimId!);
+
+        if (claim == null)
+        {
+            _logger.LogDebug("Claim not found for ID: {ClaimId}", claimId);
+            throw new KeyNotFoundException($"Claim {claimId} not found");
+        }
+
+        IDecisionEngine decisionEngine = new ManualDecisionEngine(employeeId, approved);
+        claim!.Decision = decisionEngine.EvaluateClaim(claim);
+
+        await FinaliseClaimPorcessing(claim, claimRepository, documentGenerator);
+    }
+
+    /// <inheritdoc/>
+    private async Task FinaliseClaimPorcessing(Claim claim, IClaimRepository claimRepository, IDocumentGenerator documentGenerator)
+    {
         try
         {
-            using var scope = _serviceProvider.CreateScope();
-
-            // Resolve dependencies *inside this new scope*
-            var decisionEngine = scope.ServiceProvider.GetRequiredService<IDecisionEngine>();
-            var claimRepository = scope.ServiceProvider.GetRequiredService<IClaimRepository>();
-            var docGenerator = scope.ServiceProvider.GetRequiredService<IDocumentGenerator>();
-
-            Claim? existingClaim = await claimRepository.GetByIdAsync(claimId!);
-
-            // Simulate semantic analysis step
-            PolicyMatchResult policyMatchResult = new()
-            {
-                Id = Guid.NewGuid().ToString(),
-                SimilarityScore = 1.0f,
-            };
-            existingClaim!.PolicyMatchResult = policyMatchResult;
-
-            // Evaluate decision based on score
-            Decision decision = decisionEngine.EvaluateClaim(existingClaim);
-            existingClaim.Decision = decision;
-
-            switch (decision.Type)
+            switch (claim.Decision!.Type)
             {
                 case DecisionType.Approved:
-                    GeneratedDocument doc = docGenerator.GenerateAsync(existingClaim);
-                    _logger.LogInformation("Document generated for approved claim {ClaimId} at {Path}", claimId, doc.FileUrl);
+                    GeneratedDocument doc = documentGenerator.GenerateAsync(claim);
+                    claim.GeneratedDocument = doc;
+                    _logger.LogInformation("Document generated for approved claim {ClaimId} at {Path}", claim.Id, doc.FileUrl);
                     break;
 
+                    //TODO: send email to employee, add claim to his responsability list, send email to client
+                    // - daca fail uieste send u de email la employee/ mai degraba daca da fail update u la responsability list - LogWarning
+                    // big problem, manual intervention needed, oricum update la claim (nu incurca nici daca nu se face, da macar sa tratam la fel)
+                    // oricum faci update la status, sa se poata continua 
+                    // - daca fail uieste send u la client - logDebug - dar trebe oricum sa si sa facem update la claim, ca data
+                    // viitoare cand intra clientul in app, sa vada statusu
                 case DecisionType.Escalated:
+                    //TODO: send email to client
+                    //  - daca fail uieste send u la client - logDebug - dar trebe oricum sa si sa facem update la claim, ca data
+                    // viitoare cand intra clientul in app, sa vada statusu
                 case DecisionType.Rejected:
-                    _logger.LogInformation("No document generation required for decision {DecisionType}", decision.Type);
                     break;
-            }
-
-            // TODO: actual semantic analysis, similarity score, decision logic
-            _logger.LogInformation("Successfully processed claim {ClaimId}", claimId);
-
-            try
-            {
-                await claimRepository.UpdateAsync(existingClaim);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could update the claim");
-                throw;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to process claim {ClaimId}", claimId);
+            _logger.LogWarning(ex, "Failed to process claim {ClaimId}", claim.Id);
+        }
+
+        try
+        {
+            await claimRepository.UpdateAsync(claim);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could update the claim {Claim}. Manual intervention will be needed.", claim);
+            throw;
         }
     }
 
