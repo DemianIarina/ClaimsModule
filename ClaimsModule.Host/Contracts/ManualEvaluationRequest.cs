@@ -11,7 +11,7 @@ public class ManualEvaluationRequest
     public bool Approved { get; set; }
 
     /// <summary>
-    /// The unique identifier of the employee performing the manual evaluation.
+    /// The unique identifier of the claim on which the manual evaluation is done.
     /// </summary>
-    public string EmployeeId { get; set; } = string.Empty;
+    public string ClaimId { get; set; } = string.Empty;
 }

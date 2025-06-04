@@ -46,7 +46,8 @@ public class ClaimService : IClaimService
     }
 
     /// <inheritdoc />
-    public async Task<Claim> CreateClaimAsync(string policyId, DateTime incidentTimestamp, string description, IFormFileCollection? photos)
+    public async Task<Claim> CreateClaimAsync(string policyId, string customerId, DateTime incidentTimestamp,
+        string description, IFormFileCollection? photos)
     {
         Policy? retrievedPolicy = await _policyRepository.GetByIdAsync(policyId!);
 
@@ -61,7 +62,7 @@ public class ClaimService : IClaimService
             Status = ClaimStatus.Submitted
         };
 
-        if(!ValidateClaimMetadata(retrievedPolicy, claimToCreate))
+        if(!ValidateClaimMetadata(retrievedPolicy, claimToCreate, customerId))
         {
             throw new ArgumentException("The claim is not valid for policy {PolicyId}. Could not create.", policyId);
         }
@@ -192,8 +193,10 @@ public class ClaimService : IClaimService
     /// </summary>
     /// <param name="policy">The insurance policy associated with the claim.</param>
     /// <param name="claim">The claim containing metadata to be validated, such as the incident timestamp.</param>
-    /// <returns>True if the claim's incident timestamp falls within the policy's validity period; otherwise, False</returns>
-    private bool ValidateClaimMetadata(Policy? policy, Claim claim)
+    /// <param name="customerId">The id of the customer who crates the claim.</param>
+    /// <returns>True if the claim's incident timestamp falls within the policy's validity period and the policy
+    /// on which the claim is created belongs to the customer; otherwise, False</returns>
+    private bool ValidateClaimMetadata(Policy? policy, Claim claim, string customerId)
     {
         if(policy is null)
         {
@@ -203,6 +206,8 @@ public class ClaimService : IClaimService
         bool isWithinValidityPeriod = claim.IncidentTimestamp >= policy.ValidFrom &&
             claim.IncidentTimestamp <= policy.ValidTo;
 
-        return isWithinValidityPeriod;
+        bool isOwnedBy = string.Equals(policy.Customer!.Id, customerId);
+
+        return isWithinValidityPeriod && isOwnedBy;
     }
 }

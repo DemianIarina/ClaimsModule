@@ -1,6 +1,7 @@
 ﻿using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Host.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -13,7 +14,8 @@ namespace ClaimsModule.Host.Controllers;
 /// Handles requests related to retrieving insurance policies for a specific customer.
 /// </summary>
 [ApiController]
-[Route("customers/{customerId}/policies")]
+[Route("policies")]
+[Authorize(Policy = "CustomerOnly")]
 public class PoliciesController : ControllerBase
 {
     private readonly IPolicyService _policyService;
@@ -31,8 +33,15 @@ public class PoliciesController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(GetPoliciesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<List<GetPoliciesResponse>>> GetPoliciesForCustomer(string customerId)
+    public async Task<ActionResult<List<GetPoliciesResponse>>> GetPoliciesForCustomer()
     {
+        string? customerId = User.Claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value;
+
+        if (string.IsNullOrEmpty(customerId))
+        {
+            return Unauthorized("No customer ID found in the token.");
+        }
+
         Customer customer;
         List<Policy> policies;
 

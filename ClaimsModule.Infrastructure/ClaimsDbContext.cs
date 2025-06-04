@@ -30,6 +30,11 @@ public class ClaimsDbContext : DbContext
     public DbSet<Customer> Customers => Set<Customer>();
 
     /// <summary>
+    /// Set of <see cref="AppUser"/> entities in the database.
+    /// </summary>
+    public DbSet<AppUser> Users { get; set; }
+
+    /// <summary>
     /// Configures the EF Core model using the fluent API.
     /// </summary>
     /// <param name="modelBuilder">The builder used to construct the model for the context.</param>
@@ -44,7 +49,7 @@ public class ClaimsDbContext : DbContext
 
             // Many-to-One: Claim → Policy
             entity.HasOne(c => c.Policy)
-              .WithMany() // You can later add `ICollection<Claim> Claims` in Policy if needed
+              .WithMany() 
               .HasForeignKey("PolicyId")
               .IsRequired()
               .OnDelete(DeleteBehavior.Restrict);

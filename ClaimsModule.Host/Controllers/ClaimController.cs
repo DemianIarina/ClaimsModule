@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using System.Linq;
 
 namespace ClaimsModule.Host.Controllers;
 
 [ApiController]
-[Route("/claims")]
+[Route("claims")]
 public class ClaimController : ControllerBase
 {
     private readonly IClaimService _claimService;
@@ -30,14 +32,24 @@ public class ClaimController : ControllerBase
     [ProducesResponseType(typeof(ClaimResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [Authorize(Policy = "CustomerOnly")]
     public async Task<IActionResult> CreateClaim([FromForm] CreateClaimRequest request)
     {
+        string? customerId = User.Claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value;
+
         // Build semantic description text
         string damageDescription = BuildNarrativeText(request);
 
-        // Create claim entity
-        Claim createdClaim = await _claimService.CreateClaimAsync(request.PolicyId, request.IncidentDateTime,
-            damageDescription, request.Photos);
+        Claim createdClaim;
+        try
+        {
+            createdClaim = await _claimService.CreateClaimAsync(request.PolicyId, customerId!, request.IncidentDateTime,
+                damageDescription, request.Photos);
+        }
+        catch (ArgumentException ex) 
+        {
+            return BadRequest(ex.Message);
+        }
 
         string? claimUri = Url.Action(nameof(GetClaimById), new { id = createdClaim.Id });
 
@@ -71,20 +83,23 @@ public class ClaimController : ControllerBase
     /// <param name="id">The ID of the claim evaluated.</param>
     /// <param name="request">The manual decision input.</param>
     /// <returns>HTTP 204 No Content on success or 404 if not found.</returns>
-    [HttpPost("{id}/evaluate")]
+    [HttpPost("evaluate")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ManuallyEvaluateClaim(string id, [FromBody] ManualEvaluationRequest request)
+    [Authorize(Policy = "EmployeeOnly")]
+    public async Task<IActionResult> ManuallyEvaluateClaim([FromBody] ManualEvaluationRequest request)
     {
+        string? employeeId = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
+
         try
         {
-            await _claimService.ProcessClaimManuallyAsync(id, request.Approved, request.EmployeeId);
+            await _claimService.ProcessClaimManuallyAsync(request.ClaimId, request.Approved, employeeId!);
             return Ok();
         }
         catch (KeyNotFoundException)
         {
-            return NotFound($"No claim found with ID {id}");
+            return NotFound($"No claim found with ID {request.ClaimId}");
         }
         catch (ArgumentException ex)
         {
