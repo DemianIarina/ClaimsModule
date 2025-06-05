@@ -1,6 +1,7 @@
 ﻿using ClaimsModule.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ClaimsModule.Application.Services;
@@ -18,7 +19,7 @@ public interface IClaimService
     /// <param name="incidentTimestamp">Timestamp when the incident on the claim happened.</param>
     /// <param name="description">Narrative description of what happend in the incident.</param>
     /// <param name="photos">Optional photos provided of the damage.</param>
-    /// <returns></returns>
+    /// <returns>The newly created <see cref="Claim"/> instance.</returns>
     Task<Claim> CreateClaimAsync(string policyId, string customerId, DateTime incidentTimestamp, string description, IFormFileCollection? photos);
 
     /// <summary>
@@ -28,6 +29,20 @@ public interface IClaimService
     /// <returns>A <see cref="Claim"/> instance representing the retrieved resource with the provided id, or mull
     /// if the resource was not found.</returns>
     Task<Claim?> GetClaimByIdAsync(string id);
+
+    /// <summary>
+    /// Retrieves a list of claims assigned to the specified employee.
+    /// </summary>
+    /// <param name="employeeId">The identifier of the employee whose assigned claims are to be retrieved.</param>
+    /// <returns>List of <see cref="Claim"/> instances assigned to the employee.</returns>
+    Task<List<Claim>> GetClaimsByEmpoyeeAsync(string employeeId);
+
+    /// <summary>
+    /// Retrieves a list of claims submitted by a specific customer.
+    /// </summary>
+    /// <param name="customerId">The identifier of the customer whose claims are to be retrieved.</param>
+    /// <returns>List of <see cref="Claim"/> instances created by the customer.</returns>
+    Task<List<Claim>> GetClaimsByCustomerAsync(string customerId);
 
     /// <summary>
     /// Starts processing logic for an insurance claim asynchronously.

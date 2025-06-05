@@ -48,6 +48,11 @@ public class Policy
     public Customer? Customer { get; set; }
 
     /// <summary>
+    /// The employee responsible for managing this policy.
+    /// </summary>
+    public Employee? ResponsibleEmployee { get; set; }
+
+    /// <summary>
     /// Path to the stored file.
     /// </summary>
     public string? FileUrl { get; set; }

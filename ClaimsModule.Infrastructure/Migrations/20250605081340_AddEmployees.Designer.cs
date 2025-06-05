@@ -4,6 +4,7 @@ using ClaimsModule.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClaimsModule.Infrastructure.Migrations
 {
     [DbContext(typeof(ClaimsDbContext))]
-    partial class ClaimsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250605081340_AddEmployees")]
+    partial class AddEmployees
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -55,15 +58,15 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
-                    b.Property<string>("AssignedEmployeeId")
-                        .HasColumnType("varchar(255)");
-
                     b.Property<string>("DecisionId")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("EmployeeId")
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("GeneratedDocumentId")
                         .HasColumnType("varchar(255)");
@@ -88,10 +91,10 @@ namespace ClaimsModule.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssignedEmployeeId");
-
                     b.HasIndex("DecisionId")
                         .IsUnique();
+
+                    b.HasIndex("EmployeeId");
 
                     b.HasIndex("GeneratedDocumentId")
                         .IsUnique();
@@ -248,15 +251,14 @@ namespace ClaimsModule.Infrastructure.Migrations
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Claim", b =>
                 {
-                    b.HasOne("ClaimsModule.Domain.Entities.Employee", "AssignedEmployee")
-                        .WithMany("AssignedClaims")
-                        .HasForeignKey("AssignedEmployeeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("ClaimsModule.Domain.Entities.Decision", "Decision")
                         .WithOne()
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "DecisionId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ClaimsModule.Domain.Entities.Employee", null)
+                        .WithMany("AssignedClaims")
+                        .HasForeignKey("EmployeeId");
 
                     b.HasOne("ClaimsModule.Domain.Entities.GeneratedDocument", "GeneratedDocument")
                         .WithOne()
@@ -273,8 +275,6 @@ namespace ClaimsModule.Infrastructure.Migrations
                         .WithOne()
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "PolicyMatchResultId")
                         .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("AssignedEmployee");
 
                     b.Navigation("Decision");
 

@@ -1,8 +1,10 @@
-﻿using ClaimsModule.Application.Repositories;
-using System.Threading.Tasks;
-using System;
+﻿using ClaimsModule.Application.Filters;
+using ClaimsModule.Application.Repositories;
 using ClaimsModule.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ClaimsModule.Infrastructure.Repositories;
 
@@ -35,10 +37,31 @@ public class ClaimRepository : IClaimRepository
         return await _context.Claims
             .Include(c => c.Policy)
                 .ThenInclude(p => p!.Customer)
+                .Include(c => c.AssignedEmployee)
             .Include(c => c.Decision)
             .Include(c => c.GeneratedDocument)
             .Include(c => c.PolicyMatchResult)
             .FirstOrDefaultAsync(c => c.Id == id);
+    }
+
+    public async Task<List<Claim>> GetListAsync(ClaimFilter filter)
+    {
+        IQueryable<Claim> query = _context.Claims
+            .Include(c => c.Policy)
+                .ThenInclude(p => p!.Customer)
+            .Include(c => c.AssignedEmployee)
+            .Include(c => c.Decision)
+            .Include(c => c.GeneratedDocument)
+            .Include(c => c.PolicyMatchResult)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filter.CustomerId))
+            query = query.Where(c => c.Policy!.Customer!.Id == filter.CustomerId);
+
+        if (!string.IsNullOrWhiteSpace(filter.EmployeeId))
+            query = query.Where(c => c.AssignedEmployee!.Id == filter.EmployeeId);
+
+        return await query.ToListAsync();
     }
 
     public async Task UpdateAsync(Claim claim)

@@ -78,6 +78,50 @@ public class ClaimController : ControllerBase
     }
 
     /// <summary>
+    /// Retrieves all claims assigned to the currently authenticated employee.
+    /// </summary>
+    /// <returns>A list of claims assigned to the employee.</returns>
+    [HttpGet("assigned")]
+    [Authorize(Policy = "EmployeeOnly")]
+    [ProducesResponseType(typeof(List<ClaimResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAssignedClaims()
+    {
+        string? employeeId = User.Claims.FirstOrDefault(c => c.Type == "EmployeeId")?.Value;
+
+        List<Claim> claims = await _claimService.GetClaimsByEmpoyeeAsync(employeeId!);
+
+        var result = claims.Select(c => new ClaimResponse
+        {
+            ClaimId = c.Id!,
+            Status = c.Status!
+        }).ToList();
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Retrieves all claims submitted by the currently authenticated customer.
+    /// </summary>
+    /// <returns>A list of claims submitted by the customer.</returns>
+    [HttpGet("my")]
+    [Authorize(Policy = "CustomerOnly")]
+    [ProducesResponseType(typeof(List<ClaimResponse>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetMyClaims()
+    {
+        string? customerId = User.Claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value;
+
+        List<Claim> claims = await _claimService.GetClaimsByCustomerAsync(customerId!);
+
+        var result = claims.Select(c => new ClaimResponse
+        {
+            ClaimId = c.Id!,
+            Status = c.Status!
+        }).ToList();
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Manually approves or rejects a claim after manual review.
     /// </summary>
     /// <param name="id">The ID of the claim evaluated.</param>
@@ -104,6 +148,10 @@ public class ClaimController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
         }
     }
 

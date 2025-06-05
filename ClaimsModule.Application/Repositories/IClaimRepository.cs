@@ -1,10 +1,12 @@
-﻿using ClaimsModule.Domain.Entities;
+﻿using ClaimsModule.Application.Filters;
+using ClaimsModule.Domain.Entities;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace ClaimsModule.Application.Repositories;
 
 /// <summary>
-/// Provides data access operations for  claims entities.
+/// Provides data access operations for claims entities.
 /// </summary>
 public interface IClaimRepository
 {
@@ -20,6 +22,11 @@ public interface IClaimRepository
     /// <param name="id">The unique identifier of the claim.</param>
     /// <returns>The <see cref="Claim"/>, or null if no claim was found for the given ID.</returns>
     Task<Claim?> GetByIdAsync(string id);
+
+    /// <summary>
+    /// Retrieves a list of claims matching the specified filters.
+    /// </summary>
+    Task<List<Claim>> GetListAsync(ClaimFilter filter);
 
     /// <summary>
     /// Updates an existing claim and any of its related entities (such as decisions or match results).

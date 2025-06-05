@@ -1,4 +1,5 @@
-﻿using ClaimsModule.Application.Processors;
+﻿using ClaimsModule.Application.Filters;
+using ClaimsModule.Application.Processors;
 using ClaimsModule.Application.Repositories;
 using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
@@ -59,7 +60,8 @@ public class ClaimService : IClaimService
             Policy = retrievedPolicy,
             Description = description,
             SubmittedAt = DateTime.UtcNow,
-            Status = ClaimStatus.Submitted
+            Status = ClaimStatus.Submitted,
+            AssignedEmployee = retrievedPolicy!.ResponsibleEmployee
         };
 
         if(!ValidateClaimMetadata(retrievedPolicy, claimToCreate, customerId))
@@ -83,6 +85,22 @@ public class ClaimService : IClaimService
         _ = Task.Run(() => ProcessClaimAutomaticallyAsync(claimToCreate.Id));
 
         return claimToCreate;
+    }
+
+    /// <inheritdoc/>
+    public async Task<List<Claim>> GetClaimsByCustomerAsync(string customerId)
+        => await GetFilteredClaims(new ClaimFilter { CustomerId = customerId });
+
+    /// <inheritdoc/>
+    public async Task<List<Claim>> GetClaimsByEmpoyeeAsync(string employeeId)
+        => await GetFilteredClaims(new ClaimFilter { EmployeeId = employeeId });
+
+    private async Task<List<Claim>> GetFilteredClaims(ClaimFilter filter)
+    {
+        _logger.LogTrace("Fetching claims for filter {Filter}", filter);
+        List<Claim> claims = await _claimRepository.GetListAsync(filter);
+        _logger.LogTrace("Found {ClaimCount} claims for filter {Filter}", claims.Count, filter);
+        return claims;
     }
 
     /// <inheritdoc/>
@@ -139,7 +157,13 @@ public class ClaimService : IClaimService
             throw new KeyNotFoundException($"Claim {claimId} not found");
         }
 
-        IDecisionEngine decisionEngine = new ManualDecisionEngine(employeeId, approved);
+        if (claim.AssignedEmployee is null || claim.AssignedEmployee.Id != employeeId)
+        {
+            _logger.LogDebug("Employee {EmployeeId} attempted to evaluate claim {ClaimId} not assigned to them.", employeeId, claimId);
+            throw new UnauthorizedAccessException($"Not authorized to evaluate claim {claimId}.");
+        }
+
+        IDecisionEngine decisionEngine = new ManualDecisionEngine(claim.AssignedEmployee.Name, approved);
         claim!.Decision = decisionEngine.EvaluateClaim(claim);
 
         await FinaliseClaimPorcessing(claim, claimRepository, documentGenerator);

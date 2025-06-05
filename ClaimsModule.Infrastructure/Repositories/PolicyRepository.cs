@@ -27,7 +27,10 @@ public class PolicyRepository : IPolicyRepository
     /// <inheritdoc/>
     public async Task<Policy?> GetByIdAsync(string id)
     {
-        return await _context.Policies.Include(p => p.Customer).FirstOrDefaultAsync(p => p.Id == id);
+        return await _context.Policies
+            .Include(p => p.Customer)
+            .Include(p => p.ResponsibleEmployee)
+            .FirstOrDefaultAsync(p => p.Id == id);
     }
 
     /// <inheritdoc/>

@@ -66,4 +66,9 @@ public class Claim
     /// The <see cref="Decision"/> made for the claim after automatic review.
     /// </summary>
     public Decision? Decision { get; set; }
+
+    /// <summary>
+    ///  The employee assigned to handle this claim.
+    /// </summary>
+    public Employee? AssignedEmployee { get; set; }
 }
