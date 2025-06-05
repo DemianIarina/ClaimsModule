@@ -41,8 +41,9 @@ public interface IClaimService
     /// Retrieves a list of claims submitted by a specific customer.
     /// </summary>
     /// <param name="customerId">The identifier of the customer whose claims are to be retrieved.</param>
+    /// <param name="policyId">The identifier of the policy which claims are to be retrieved.</param>
     /// <returns>List of <see cref="Claim"/> instances created by the customer.</returns>
-    Task<List<Claim>> GetClaimsByCustomerAsync(string customerId);
+    Task<List<Claim>> GetClaimsByCustomerAsync(string customerId, string? policyId);
 
     /// <summary>
     /// Starts processing logic for an insurance claim asynchronously.

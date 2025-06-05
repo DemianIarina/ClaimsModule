@@ -61,6 +61,13 @@ public class ClaimRepository : IClaimRepository
         if (!string.IsNullOrWhiteSpace(filter.EmployeeId))
             query = query.Where(c => c.AssignedEmployee!.Id == filter.EmployeeId);
 
+        if (!string.IsNullOrWhiteSpace(filter.PolicyId))
+            query = query.Where(c => c.Policy!.Id == filter.PolicyId);
+
+        //Add ordering by customerId, and then by policyId
+        query = query.OrderBy(c => c.Policy!.Customer!.Id)
+                .ThenBy(c => c.Policy!.Id);
+
         return await query.ToListAsync();
     }
 

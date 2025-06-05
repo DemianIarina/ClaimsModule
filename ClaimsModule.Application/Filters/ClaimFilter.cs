@@ -14,4 +14,9 @@ public class ClaimFilter
     /// Optional filter to retrieve only claims assigned to a specific employee.
     /// </summary>
     public string? EmployeeId { get; set; }
+
+    /// <summary>
+    /// Optional filter to retrieve only claims created on a specific policy.
+    /// </summary>
+    public string? PolicyId { get; set; }
 }

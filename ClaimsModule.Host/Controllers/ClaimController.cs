@@ -106,11 +106,11 @@ public class ClaimController : ControllerBase
     [HttpGet("my")]
     [Authorize(Policy = "CustomerOnly")]
     [ProducesResponseType(typeof(List<ClaimResponse>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetMyClaims()
+    public async Task<IActionResult> GetMyClaims([FromQuery] string? policyId = null)
     {
         string? customerId = User.Claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value;
 
-        List<Claim> claims = await _claimService.GetClaimsByCustomerAsync(customerId!);
+        List<Claim> claims = await _claimService.GetClaimsByCustomerAsync(customerId!, policyId);
 
         var result = claims.Select(c => new ClaimResponse
         {

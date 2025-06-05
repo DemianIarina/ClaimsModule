@@ -88,8 +88,11 @@ public class ClaimService : IClaimService
     }
 
     /// <inheritdoc/>
-    public async Task<List<Claim>> GetClaimsByCustomerAsync(string customerId)
-        => await GetFilteredClaims(new ClaimFilter { CustomerId = customerId });
+    public async Task<List<Claim>> GetClaimsByCustomerAsync(string customerId, string? policyId = null)
+        => await GetFilteredClaims(new ClaimFilter { 
+            CustomerId = customerId,
+            PolicyId = policyId
+        });
 
     /// <inheritdoc/>
     public async Task<List<Claim>> GetClaimsByEmpoyeeAsync(string employeeId)
