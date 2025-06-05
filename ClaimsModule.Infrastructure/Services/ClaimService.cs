@@ -216,13 +216,17 @@ public class ClaimService : IClaimService
     }
 
     /// <summary>
-    /// Validates the metadata of a claim by ensuring it meets policy-related criteria.
+    /// Validates whether a claim's metadata aligns with the policy and customer constraints.
+    /// It ensures:
+    /// - The policy exists.
+    /// - The incident date is within the policy validity window.
+    /// - The policy belongs to the customer submitting the claim.
+    /// - The incident timestamp is not in the future.
     /// </summary>
     /// <param name="policy">The insurance policy associated with the claim.</param>
-    /// <param name="claim">The claim containing metadata to be validated, such as the incident timestamp.</param>
-    /// <param name="customerId">The id of the customer who crates the claim.</param>
-    /// <returns>True if the claim's incident timestamp falls within the policy's validity period and the policy
-    /// on which the claim is created belongs to the customer; otherwise, False</returns>
+    /// <param name="claim">The claim containing metadata such as the incident timestamp.</param>
+    /// <param name="customerId">The ID of the customer submitting the claim.</param>
+    /// <returns>True if the metadata is valid; otherwise, false.</returns>
     private bool ValidateClaimMetadata(Policy? policy, Claim claim, string customerId)
     {
         if(policy is null)
@@ -230,11 +234,17 @@ public class ClaimService : IClaimService
             return false;
         }
 
-        bool isWithinValidityPeriod = claim.IncidentTimestamp >= policy.ValidFrom &&
-            claim.IncidentTimestamp <= policy.ValidTo;
+        DateTime now = DateTime.Now;
 
-        bool isOwnedBy = string.Equals(policy.Customer!.Id, customerId);
+        if (claim.IncidentTimestamp > now)
+            return false;
 
-        return isWithinValidityPeriod && isOwnedBy;
+        if (claim.IncidentTimestamp < policy.ValidFrom || claim.IncidentTimestamp > policy.ValidTo)
+            return false;
+
+        if (!string.Equals(policy.Customer?.Id, customerId))
+            return false;
+
+        return true;
     }
 }
