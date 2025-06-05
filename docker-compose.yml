@@ -8,20 +8,34 @@ services:
     ports:
       - "5032:8081"
     depends_on:
-      - mysql
+      - minio
     environment:
       - ConnectionStrings__DefaultConnection=server=mysql;port=3306;database=claims-module;user=root;password=password;
 
-  mysql:
-    image: mysql:8.0
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: claims-module
+  minio:
+    image: minio/minio:latest
+    container_name: minio
     ports:
-      - "3307:3306"
+      - "9100:9000"
+      - "9101:9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
     volumes:
-      - mysql_data:/var/lib/mysql
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+
+  # mysql:
+  #   image: mysql:8.0
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: password
+  #     MYSQL_DATABASE: claims-module
+  #   ports:
+  #     - "3307:3306"
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
 
 volumes:
-  mysql_data:
+  minio_data:

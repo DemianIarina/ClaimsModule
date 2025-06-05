@@ -1,5 +1,6 @@
 ﻿using ClaimsModule.Domain.Enums;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ClaimsModule.Domain.Entities;
@@ -60,7 +61,12 @@ public class Claim
     /// <summary>
     /// The Document generated for a claim.
     /// </summary>
-    public GeneratedDocument? GeneratedDocument { get; set; }
+    public PersistedDocument? GeneratedDocument { get; set; }
+
+    /// <summary>
+    /// The uploaded photos provided by the customer.
+    /// </summary>
+    public List<PersistedDocument> UploadedPhotos { get; set; } = new();
 
     /// <summary>
     /// The <see cref="Decision"/> made for the claim after automatic review.

@@ -25,7 +25,7 @@ public class ClaimService : IClaimService
     private readonly IPolicyRepository _policyRepository;
     private readonly IServiceProvider _serviceProvider;
     //private readonly IDocumentRepository _documentRepository;
-    //private readonly IFileStorageService _fileStorageService;
+    private readonly IFileStorageService _fileStorageService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClaimService"/> class.
@@ -34,13 +34,13 @@ public class ClaimService : IClaimService
     /// <param name="policyRepository"></param>
     /// <param name="documentRepository"></param>
     /// <param name="fileStorageService"></param>
-    public ClaimService(IClaimRepository claimRepository, IPolicyRepository policyRepository,
+    public ClaimService(IClaimRepository claimRepository, IPolicyRepository policyRepository, IFileStorageService fileStorageService,
         IServiceProvider serviceProvider, ILogger<ClaimService> logger)
     {
         _claimRepository = claimRepository;
         _policyRepository = policyRepository;
         //_documentRepository = documentRepository;
-        //_fileStorageService = fileStorageService;
+        _fileStorageService = fileStorageService;
         _serviceProvider = serviceProvider;
 
         _logger = logger;
@@ -69,19 +69,28 @@ public class ClaimService : IClaimService
             throw new ArgumentException("The claim is not valid for policy {PolicyId}. Could not create.", policyId);
         }
 
+        if (photos != null && photos.Count > 0)
+        {
+            claimToCreate.UploadedPhotos = new List<PersistedDocument>();
+
+            foreach (IFormFile photo in photos)
+            {
+                string objectName = $"{claimToCreate.Id}/{Guid.NewGuid()}_{photo.FileName}";
+                using var stream = photo.OpenReadStream();
+                string url = await _fileStorageService.UploadAsync(stream, objectName, photo.ContentType);
+
+                claimToCreate.UploadedPhotos.Add(new PersistedDocument
+                {
+                    FileName = photo.FileName,
+                    ContentType = photo.ContentType,
+                    FileUrl = url
+                });
+            }
+        }
+
         await _claimRepository.AddAsync(claimToCreate);
 
-        //// TODO: Upload damage photos and save references
-        //if (photos != null)
-        //{
-        //    foreach (IFormFile file in photos)
-        //    {
-        //        var url = await _fileStorageService.UploadAsync(file, claim.Id);
-        //        var document = new Document(claim.Id, file.FileName, url);
-        //        await _documentRepository.AddAsync(document);
-        //    }
-        //}
-
+        // trigger background processing
         _ = Task.Run(() => ProcessClaimAutomaticallyAsync(claimToCreate.Id));
 
         return claimToCreate;
@@ -180,7 +189,7 @@ public class ClaimService : IClaimService
             switch (claim.Decision!.Type)
             {
                 case DecisionType.Approved:
-                    GeneratedDocument doc = documentGenerator.GenerateAsync(claim);
+                    PersistedDocument doc = documentGenerator.GenerateAsync(claim);
                     claim.GeneratedDocument = doc;
                     _logger.LogInformation("Document generated for approved claim {ClaimId} at {Path}", claim.Id, doc.FileUrl);
                     break;

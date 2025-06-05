@@ -13,6 +13,6 @@ public interface IDocumentGenerator
     /// Generates a document based on the approved claim.
     /// </summary>
     /// <param name="claim">The approved claim to generate a document for.</param>
-    /// <returns>A <see cref="GeneratedDocument"/> with file URL and metadata.</returns>
-    GeneratedDocument GenerateAsync(Claim claim);
+    /// <returns>A <see cref="PersistedDocument"/> with file URL and metadata.</returns>
+    PersistedDocument GenerateAsync(Claim claim);
 }

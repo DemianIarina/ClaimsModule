@@ -77,6 +77,10 @@ public class ClaimsDbContext : DbContext
                   .HasForeignKey<Claim>("GeneratedDocumentId")
                   .OnDelete(DeleteBehavior.Cascade);
 
+            entity.HasMany(c => c.UploadedPhotos)
+                    .WithOne()
+                    .OnDelete(DeleteBehavior.Cascade);
+
             // Many-to-One: Claim → Employee (AssignedEmployee)
             entity.HasOne(c => c.AssignedEmployee)
                   .WithMany(e => e.AssignedClaims)
@@ -104,7 +108,7 @@ public class ClaimsDbContext : DbContext
             entity.Property(d => d.DecidedBy).HasMaxLength(100);
         });
 
-        modelBuilder.Entity<GeneratedDocument>(entity =>
+        modelBuilder.Entity<PersistedDocument>(entity =>
         {
             entity.HasKey(g => g.Id);
             entity.Property(g => g.FileUrl).HasMaxLength(500);

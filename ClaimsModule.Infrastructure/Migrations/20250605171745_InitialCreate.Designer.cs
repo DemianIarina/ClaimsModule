@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ClaimsModule.Infrastructure.Migrations
 {
     [DbContext(typeof(ClaimsDbContext))]
-    [Migration("20250603175526_AddPolicyNumber")]
-    partial class AddPolicyNumber
+    [Migration("20250605171745_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,9 +25,40 @@ namespace ClaimsModule.Infrastructure.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.AppUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("LinkedCustomerId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("LinkedEmployeeId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Claim", b =>
                 {
                     b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("AssignedEmployeeId")
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("DecisionId")
@@ -59,6 +90,8 @@ namespace ClaimsModule.Infrastructure.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedEmployeeId");
 
                     b.HasIndex("DecisionId")
                         .IsUnique();
@@ -119,13 +152,42 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.ToTable("Decision");
                 });
 
-            modelBuilder.Entity("ClaimsModule.Domain.Entities.GeneratedDocument", b =>
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.Employee", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Employees");
+                });
+
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.PersistedDocument", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ClaimId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ContentType")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("FileUrl")
                         .HasMaxLength(500)
@@ -133,7 +195,9 @@ namespace ClaimsModule.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("GeneratedDocument");
+                    b.HasIndex("ClaimId");
+
+                    b.ToTable("PersistedDocument");
                 });
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Policy", b =>
@@ -162,6 +226,9 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.Property<string>("PolicyNumber")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("ResponsibleEmployeeId")
+                        .HasColumnType("varchar(255)");
+
                     b.Property<DateTime>("ValidFrom")
                         .HasColumnType("datetime(6)");
 
@@ -171,6 +238,8 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("ResponsibleEmployeeId");
 
                     b.ToTable("Policies");
                 });
@@ -193,12 +262,17 @@ namespace ClaimsModule.Infrastructure.Migrations
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Claim", b =>
                 {
+                    b.HasOne("ClaimsModule.Domain.Entities.Employee", "AssignedEmployee")
+                        .WithMany("AssignedClaims")
+                        .HasForeignKey("AssignedEmployeeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("ClaimsModule.Domain.Entities.Decision", "Decision")
                         .WithOne()
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "DecisionId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("ClaimsModule.Domain.Entities.GeneratedDocument", "GeneratedDocument")
+                    b.HasOne("ClaimsModule.Domain.Entities.PersistedDocument", "GeneratedDocument")
                         .WithOne()
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "GeneratedDocumentId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -214,6 +288,8 @@ namespace ClaimsModule.Infrastructure.Migrations
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "PolicyMatchResultId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.Navigation("AssignedEmployee");
+
                     b.Navigation("Decision");
 
                     b.Navigation("GeneratedDocument");
@@ -221,6 +297,14 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.Navigation("Policy");
 
                     b.Navigation("PolicyMatchResult");
+                });
+
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.PersistedDocument", b =>
+                {
+                    b.HasOne("ClaimsModule.Domain.Entities.Claim", null)
+                        .WithMany("UploadedPhotos")
+                        .HasForeignKey("ClaimId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Policy", b =>
@@ -231,11 +315,30 @@ namespace ClaimsModule.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ClaimsModule.Domain.Entities.Employee", "ResponsibleEmployee")
+                        .WithMany("Policies")
+                        .HasForeignKey("ResponsibleEmployeeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Customer");
+
+                    b.Navigation("ResponsibleEmployee");
+                });
+
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.Claim", b =>
+                {
+                    b.Navigation("UploadedPhotos");
                 });
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Customer", b =>
                 {
+                    b.Navigation("Policies");
+                });
+
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.Employee", b =>
+                {
+                    b.Navigation("AssignedClaims");
+
                     b.Navigation("Policies");
                 });
 #pragma warning restore 612, 618

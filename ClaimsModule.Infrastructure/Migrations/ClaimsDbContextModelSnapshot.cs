@@ -169,13 +169,22 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.ToTable("Employees");
                 });
 
-            modelBuilder.Entity("ClaimsModule.Domain.Entities.GeneratedDocument", b =>
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.PersistedDocument", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
+                    b.Property<string>("ClaimId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ContentType")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("FileName")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("FileUrl")
                         .HasMaxLength(500)
@@ -183,7 +192,9 @@ namespace ClaimsModule.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("GeneratedDocument");
+                    b.HasIndex("ClaimId");
+
+                    b.ToTable("PersistedDocument");
                 });
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Policy", b =>
@@ -258,7 +269,7 @@ namespace ClaimsModule.Infrastructure.Migrations
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "DecisionId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("ClaimsModule.Domain.Entities.GeneratedDocument", "GeneratedDocument")
+                    b.HasOne("ClaimsModule.Domain.Entities.PersistedDocument", "GeneratedDocument")
                         .WithOne()
                         .HasForeignKey("ClaimsModule.Domain.Entities.Claim", "GeneratedDocumentId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -285,6 +296,14 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.Navigation("PolicyMatchResult");
                 });
 
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.PersistedDocument", b =>
+                {
+                    b.HasOne("ClaimsModule.Domain.Entities.Claim", null)
+                        .WithMany("UploadedPhotos")
+                        .HasForeignKey("ClaimId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Policy", b =>
                 {
                     b.HasOne("ClaimsModule.Domain.Entities.Customer", "Customer")
@@ -301,6 +320,11 @@ namespace ClaimsModule.Infrastructure.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("ResponsibleEmployee");
+                });
+
+            modelBuilder.Entity("ClaimsModule.Domain.Entities.Claim", b =>
+                {
+                    b.Navigation("UploadedPhotos");
                 });
 
             modelBuilder.Entity("ClaimsModule.Domain.Entities.Customer", b =>

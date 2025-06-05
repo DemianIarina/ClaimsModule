@@ -1,4 +1,5 @@
 ﻿using ClaimsModule.Application.Processors;
+using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using QuestPDF.Fluent;
@@ -12,25 +13,20 @@ namespace ClaimsModule.Infrastructure.Processors;
 public class AuthorizationDocumentGenerator : IDocumentGenerator
 {
     private readonly ILogger<AuthorizationDocumentGenerator> _logger;
-    private const string OutputDir = "GeneratedDocs";
+    private readonly IFileStorageService _fileStorage;
 
-    public AuthorizationDocumentGenerator(ILogger<AuthorizationDocumentGenerator> logger)
+    public AuthorizationDocumentGenerator(ILogger<AuthorizationDocumentGenerator> logger, IFileStorageService fileStorage)
     {
         _logger = logger;
-        Directory.CreateDirectory(OutputDir);
+        _fileStorage = fileStorage;
     }
 
-    public GeneratedDocument GenerateAsync(Claim claim)
+    public PersistedDocument GenerateAsync(Claim claim)
     {
-        string fileName = $"Claim-{claim.Id}.pdf";
-        string fullPath = Path.Combine(OutputDir, fileName);
+        string fileName = $"Claim-{claim.Policy!.PolicyNumber}-{claim.SubmittedAt:yyyyMMddHHmmss}.pdf";
+        string objectName = $"{claim.Id}/{fileName}";
 
-        GeneratedDocument document = new()
-        {
-            Id = Guid.NewGuid().ToString(),
-            FileUrl = fullPath,
-            CreatedAt = DateTime.Now
-        };
+        using var memoryStream = new MemoryStream();
 
         Document.Create(container =>
         {
@@ -53,7 +49,6 @@ public class AuthorizationDocumentGenerator : IDocumentGenerator
                 {
                     col.Spacing(8);
 
-                    col.Item().Text($"Document ID: {document.Id}").FontSize(10);
                     col.Item().Text($"Date of Issue: {DateTime.UtcNow:yyyy-MM-dd}").FontSize(10);
 
                     col.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
@@ -105,10 +100,21 @@ public class AuthorizationDocumentGenerator : IDocumentGenerator
                         });
                 });
             });
-        }).GeneratePdf(fullPath);
+        }).GeneratePdf(memoryStream);
 
-        _logger.LogInformation("PDF document generated at {Path}", fullPath);
+        memoryStream.Seek(0, SeekOrigin.Begin);
 
-        return document;
+        var fileUrl = _fileStorage.UploadAsync(memoryStream, objectName, "application/pdf").GetAwaiter().GetResult();
+
+        _logger.LogInformation("PDF document generated at {Path}", fileUrl);
+
+        return new PersistedDocument
+        {
+            Id = Guid.NewGuid().ToString(),
+            FileName = fileName,
+            FileUrl = fileUrl,
+            ContentType = "application/pdf",
+            CreatedAt = DateTime.UtcNow
+        };
     }
 }

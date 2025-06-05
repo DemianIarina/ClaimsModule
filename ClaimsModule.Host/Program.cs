@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Minio;
 using QuestPDF.Infrastructure;
 using Serilog;
 using System;
@@ -32,7 +33,7 @@ namespace ClaimsModule.Host
 
             builder.Host.UseSerilog();
 
-            var jwtConfig = builder.Configuration.GetSection("Jwt");
+            IConfigurationSection jwtConfig = builder.Configuration.GetSection("Jwt");
             builder.Services.AddAuthentication("Bearer")
             .AddJwtBearer("Bearer", options =>
             {
@@ -55,6 +56,14 @@ namespace ClaimsModule.Host
                 options.AddPolicy("EmployeeOnly", policy => policy.RequireRole("Employee"));
             });
 
+            IConfigurationSection minioConfig = builder.Configuration.GetSection("Minio");
+
+            builder.Services.AddMinio(configureClient => configureClient
+                .WithEndpoint(minioConfig["Endpoint"])
+                .WithCredentials(minioConfig["AccessKey"], minioConfig["SecretKey"])
+                .WithSSL(false)
+                .Build());
+
             // Add services to the container.
             builder.Services.Configure<DecisionThresholds>(
                 builder.Configuration.GetSection("DecisionThresholds"));
@@ -72,6 +81,7 @@ namespace ClaimsModule.Host
                     ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
             builder.Services.AddScoped<IPolicyService, PolicyService>();
             builder.Services.AddScoped<IClaimService, ClaimService>();
+            builder.Services.AddScoped<IFileStorageService, MinioFileStorageService>();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
