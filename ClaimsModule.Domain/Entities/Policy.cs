@@ -53,8 +53,8 @@ public class Policy
     public Employee? ResponsibleEmployee { get; set; }
 
     /// <summary>
-    /// Path to the stored file.
+    /// The <see cref="PersistedDocument"/> representing the policy document.
     /// </summary>
-    public string? FileUrl { get; set; }
+    public PersistedDocument? PolicyDocument { get; set; }
 }
 

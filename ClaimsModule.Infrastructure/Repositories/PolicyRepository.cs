@@ -28,6 +28,7 @@ public class PolicyRepository : IPolicyRepository
     public async Task<Policy?> GetByIdAsync(string id)
     {
         return await _context.Policies
+            .Include(c => c.PolicyDocument)
             .Include(p => p.Customer)
             .Include(p => p.ResponsibleEmployee)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -36,7 +37,9 @@ public class PolicyRepository : IPolicyRepository
     /// <inheritdoc/>
     public async Task<List<Policy>> GetListAsync(PolicyFilter filter)
     {
-        IQueryable<Policy> query = _context.Policies.AsQueryable();
+        IQueryable<Policy> query = _context.Policies
+            .Include(c => c.PolicyDocument)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filter.CustomerId))
             query = query.Where(p => p.Customer!.Id == filter.CustomerId);

@@ -71,7 +71,7 @@ public class PoliciesController : ControllerBase
                 CarModel = p.CarModel!,
                 ValidFrom = p.ValidFrom,
                 ValidTo = p.ValidTo,
-                DocumentReference = p.FileUrl!
+                DocumentReference = p.PolicyDocument!.FileUrl!
             }).ToList()
         };
 

@@ -20,7 +20,27 @@ public class Claim
     /// <summary>
     /// Timestamp when the incident on the claim happened.
     /// </summary>
-    public DateTime? IncidentTimestamp { get; set; } 
+    public DateTime? IncidentTimestamp { get; set; }
+
+    /// <summary>
+    /// The location of the incident
+    /// </summary>
+    public string? IncidentLocation { get; set; }
+
+    /// <summary>
+    /// The type of the damage
+    /// </summary>
+    public string? DamageType { get; set; }
+
+    /// <summary>
+    /// Indicates whether anyone was injured in the incident.
+    /// </summary>
+    public bool WasAnyoneInjured { get; set; }
+
+    /// <summary>
+    /// Areas of the vehicle that were damaged
+    /// </summary>
+    public string? AreasDamaged { get; set; }
 
     /// <summary>
     /// The policy matched with the claim.

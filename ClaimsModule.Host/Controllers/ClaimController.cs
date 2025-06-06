@@ -1,13 +1,14 @@
-﻿using ClaimsModule.Application.Services;
+﻿using ClaimsModule.Application.RequestModels;
+using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Host.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ClaimsModule.Host.Controllers;
 
@@ -35,18 +36,30 @@ public class ClaimController : ControllerBase
     [Authorize(Policy = "CustomerOnly")]
     public async Task<IActionResult> CreateClaim([FromForm] CreateClaimRequest request)
     {
-        string? customerId = User.Claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value;
+        string customerId = User.Claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value!;
 
         // Build semantic description text
-        string damageDescription = BuildNarrativeText(request);
+        string narrativeText = BuildNarrativeText(request);
+
+        CreateClaimRequestModel createClaimRequestModel = new()
+        {
+            CustomerId = customerId,
+            PolicyId = request.PolicyId,
+            IncidentDateTime = request.IncidentDateTime,
+            IncidentLocation = request.IncidentLocation,
+            DamageType = request.DamageType,
+            WasAnyoneInjured = request.WasAnyoneInjured,
+            AreasDamaged = request.AreasDamaged,
+            NarrativeText = narrativeText,
+            Photos = request.Photos
+        };
 
         Claim createdClaim;
         try
         {
-            createdClaim = await _claimService.CreateClaimAsync(request.PolicyId, customerId!, request.IncidentDateTime,
-                damageDescription, request.Photos);
+            createdClaim = await _claimService.CreateClaimAsync(createClaimRequestModel);
         }
-        catch (ArgumentException ex) 
+        catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
         }
@@ -155,20 +168,31 @@ public class ClaimController : ControllerBase
         }
     }
 
-    private string BuildNarrativeText(CreateClaimRequest req)
+    private string BuildNarrativeText(CreateClaimRequest request)
     {
-        var text = $@"
-            Incident occurred on {req.IncidentDateTime:yyyy-MM-dd HH:mm} at {req.IncidentLocation}.
-            Towed: {(req.WasTowed ? "Yes" : "No")}, Drivable: {(req.IsDrivable ? "Yes" : "No")}.
-            Injuries: {(req.WasAnyoneInjured ? "Yes" : "No")}, Other vehicle involved: {(req.WasAnotherVehicleInvolved ? "Yes" : "No")}.
-            Police report: {(req.WasPoliceReportFiled ? "Yes" : "No")}, Alcohol/drugs: {(req.WasAlcoholOrDrugsInvolved ? "Yes" : "No")}.
-            Weather and road: {req.WeatherConditions}.
-            Before: {req.PreIncidentDescription}
-            During: {req.IncidentDescription}
-            After: {req.PostIncidentDescription}
-            Damaged Parts: {req.DamagedParts}
-            ";
+        return $@"
+            Incident Details:
+            - Date & Time: {request.IncidentDateTime}
+            - Location: {request.IncidentLocation}
+            - Damage Type: {request.DamageType}
+            - Areas Damaged: {request.AreasDamaged}
+            - Was Anyone Injured: {(request.WasAnyoneInjured ? "Yes" : "No")}
 
-        return text.Trim();
+            Additional Information:
+            - Was Towed: {(request.WasTowed ? "Yes" : "No")}
+            - Alcohol/Drugs Involved: {(request.WasAlcoholOrDrugsInvolved ? "Yes" : "No")}
+            - Weather Conditions: {request.WeatherConditions}
+            - Who Was Driving: {request.WhoWasDriving}
+            - Use of Vehicle: {request.UseOfVehicle}
+            - Estimated Cost of Repair: {request.EstimatedCostOfRepair} EUR
+            - Current Mileage: {request.CurrentMileage} km
+            - MOT Valid: {(request.WasMOTValid ? "Yes" : "No")}
+            - Tires Proper: {(request.WereTiresProper ? "Yes" : "No")}
+            - Brakes Proper: {(request.WereBreaksProper ? "Yes" : "No")}
+            - Lights Proper: {(request.WereLightsProper ? "Yes" : "No")}
+
+            Full Description Provided by Customer:
+            {request.FullDescription}
+            ";
     }
 }

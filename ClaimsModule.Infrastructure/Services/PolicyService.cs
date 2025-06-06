@@ -13,6 +13,7 @@ public class PolicyService : IPolicyService
     private readonly ILogger<PolicyService> _logger;
     private readonly ICustomerRepository _customerRepository;
     private readonly IPolicyRepository _policyRepository;
+    private readonly IFileStorageService _fileStorageService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PolicyService"/> class.
@@ -20,10 +21,12 @@ public class PolicyService : IPolicyService
     /// <param name="customerRepository">The repository used to access customer data.</param>
     /// <param name="policyRepository">The repository used to access policy data.</param>
     /// <param name="logger"><see cref="ILogger"/></param>
-    public PolicyService(ICustomerRepository customerRepository, IPolicyRepository policyRepository, ILogger<PolicyService> logger)
+    public PolicyService(ICustomerRepository customerRepository, IPolicyRepository policyRepository,
+        IFileStorageService fileStorageService, ILogger<PolicyService> logger)
     {
         _customerRepository = customerRepository;
         _policyRepository = policyRepository;
+        _fileStorageService = fileStorageService;
         _logger = logger;
     }
 
@@ -50,8 +53,22 @@ public class PolicyService : IPolicyService
 
         List<Policy> policies = await _policyRepository.GetListAsync(filter);
 
+        foreach (Policy policy in policies)
+        {
+            await RefreshPresignedUrls(policy);
+        }
+
         _logger.LogTrace("Found {PolicyCount} policies for customer {CustomerId}", policies.Count, customerId);
 
         return (customer, policies);
+    }
+
+
+    private async Task RefreshPresignedUrls(Policy policy)
+    {
+        if (policy.PolicyDocument != null)
+        {
+            policy.PolicyDocument.FileUrl = await _fileStorageService.GeneratePresignedUrlAsync(policy.PolicyDocument.GeneratedFileName!);
+        }
     }
 }

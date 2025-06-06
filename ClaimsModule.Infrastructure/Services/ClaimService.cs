@@ -1,6 +1,7 @@
 ﻿using ClaimsModule.Application.Filters;
 using ClaimsModule.Application.Processors;
 using ClaimsModule.Application.Repositories;
+using ClaimsModule.Application.RequestModels;
 using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Domain.Enums;
@@ -56,33 +57,35 @@ public class ClaimService : IClaimService
     }
 
     /// <inheritdoc />
-    public async Task<Claim> CreateClaimAsync(string policyId, string customerId, DateTime incidentTimestamp,
-        string description, IFormFileCollection? photos)
+    public async Task<Claim> CreateClaimAsync(CreateClaimRequestModel createClaimRequestModel)
     {
-        Policy? retrievedPolicy = await _policyRepository.GetByIdAsync(policyId!);
+        Policy? retrievedPolicy = await _policyRepository.GetByIdAsync(createClaimRequestModel.PolicyId);
 
-        // Create claim entity
+        if(!ValidateClaimMetadata(retrievedPolicy, createClaimRequestModel))
+        {
+            throw new ArgumentException("The claim is not valid for policy {PolicyId}. Could not create.", createClaimRequestModel.PolicyId);
+        }
+
         Claim claimToCreate = new()
         {
             Id = Guid.NewGuid().ToString(),
-            IncidentTimestamp = incidentTimestamp,
+            IncidentTimestamp = createClaimRequestModel.IncidentDateTime,
+            IncidentLocation = createClaimRequestModel.IncidentLocation,
+            DamageType = createClaimRequestModel.DamageType,
+            WasAnyoneInjured = createClaimRequestModel.WasAnyoneInjured,
+            AreasDamaged = createClaimRequestModel.AreasDamaged,
             Policy = retrievedPolicy,
-            Description = description,
+            Description = createClaimRequestModel.NarrativeText,
             SubmittedAt = DateTime.UtcNow,
             Status = ClaimStatus.Submitted,
             AssignedEmployee = retrievedPolicy!.ResponsibleEmployee
         };
 
-        if(!ValidateClaimMetadata(retrievedPolicy, claimToCreate, customerId))
-        {
-            throw new ArgumentException("The claim is not valid for policy {PolicyId}. Could not create.", policyId);
-        }
-
-        if (photos != null && photos.Count > 0)
+        if (createClaimRequestModel.Photos != null && createClaimRequestModel.Photos.Count > 0)
         {
             claimToCreate.UploadedPhotos = new List<PersistedDocument>();
 
-            foreach (IFormFile photo in photos)
+            foreach (IFormFile photo in createClaimRequestModel.Photos)
             {
                 using Stream stream = photo.OpenReadStream();
 
@@ -261,7 +264,7 @@ public class ClaimService : IClaimService
     }
 
     /// <summary>
-    /// Validates whether a claim's metadata aligns with the policy and customer constraints.
+    /// Validates whether a claim request metadata aligns with the policy. constrains.
     /// It ensures:
     /// - The policy exists.
     /// - The incident date is within the policy validity window.
@@ -269,10 +272,8 @@ public class ClaimService : IClaimService
     /// - The incident timestamp is not in the future.
     /// </summary>
     /// <param name="policy">The insurance policy associated with the claim.</param>
-    /// <param name="claim">The claim containing metadata such as the incident timestamp.</param>
-    /// <param name="customerId">The ID of the customer submitting the claim.</param>
-    /// <returns>True if the metadata is valid; otherwise, false.</returns>
-    private bool ValidateClaimMetadata(Policy? policy, Claim claim, string customerId)
+    /// <param name="createClaimRequestModel"></param>
+    private bool ValidateClaimMetadata(Policy? policy, CreateClaimRequestModel createClaimRequestModel)
     {
         if (policy is null)
         {
@@ -281,13 +282,13 @@ public class ClaimService : IClaimService
 
         DateTime now = DateTime.Now;
 
-        if (claim.IncidentTimestamp > now)
+        if (createClaimRequestModel.IncidentDateTime > now)
             return false;
 
-        if (claim.IncidentTimestamp < policy.ValidFrom || claim.IncidentTimestamp > policy.ValidTo)
+        if (createClaimRequestModel.IncidentDateTime < policy.ValidFrom || createClaimRequestModel.IncidentDateTime > policy.ValidTo)
             return false;
 
-        if (!string.Equals(policy.Customer?.Id, customerId))
+        if (!string.Equals(policy.Customer?.Id, createClaimRequestModel.CustomerId))
             return false;
 
         return true;

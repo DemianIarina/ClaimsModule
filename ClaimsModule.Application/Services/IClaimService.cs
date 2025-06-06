@@ -1,6 +1,5 @@
-﻿using ClaimsModule.Domain.Entities;
-using Microsoft.AspNetCore.Http;
-using System;
+﻿using ClaimsModule.Application.RequestModels;
+using ClaimsModule.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -14,13 +13,9 @@ public interface IClaimService
     /// <summary>
     /// Creates a new claim from structured input, including file attachments and metadata.
     /// </summary>
-    /// <param name="policyId">Id of the <see cref="Policy"/> on which the claim is made.</param>
-    /// <param name="customerId">Id of the <see cref="Customer"/> who makes the claim.</param>
-    /// <param name="incidentTimestamp">Timestamp when the incident on the claim happened.</param>
-    /// <param name="description">Narrative description of what happend in the incident.</param>
-    /// <param name="photos">Optional photos provided of the damage.</param>
+    /// <param name="createClaimRequestModel"></param>
     /// <returns>The newly created <see cref="Claim"/> instance.</returns>
-    Task<Claim> CreateClaimAsync(string policyId, string customerId, DateTime incidentTimestamp, string description, IFormFileCollection? photos);
+    Task<Claim> CreateClaimAsync(CreateClaimRequestModel createClaimRequestModel);
 
     /// <summary>
     /// Retrieves a claim by id.
