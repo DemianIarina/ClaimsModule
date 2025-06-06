@@ -6,6 +6,8 @@ using ClaimsModule.Domain.Entities;
 using ClaimsModule.Domain.Enums;
 using ClaimsModule.Infrastructure.Config;
 using ClaimsModule.Infrastructure.Processors;
+using FileSignatures;
+using FileSignatures.Formats;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -30,6 +32,7 @@ public class ClaimService : IClaimService
     private readonly IFileStorageService _fileStorageService;
     private readonly IEmailService _emailService;
     private readonly EmailTemplates _emailTemplates;
+    private readonly IFileFormatInspector _inspector;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClaimService"/> class.
@@ -38,7 +41,8 @@ public class ClaimService : IClaimService
     /// <param name="policyRepository"></param>
     /// <param name="fileStorageService"></param>
     public ClaimService(IClaimRepository claimRepository, IPolicyRepository policyRepository, IFileStorageService fileStorageService,
-        IServiceProvider serviceProvider, IEmailService emailService, IOptions<EmailTemplates> emailTemplates, ILogger<ClaimService> logger)
+        IServiceProvider serviceProvider, IEmailService emailService, IOptions<EmailTemplates> emailTemplates, 
+        IFileFormatInspector inspector, ILogger<ClaimService> logger)
     {
         _claimRepository = claimRepository;
         _policyRepository = policyRepository;
@@ -46,6 +50,7 @@ public class ClaimService : IClaimService
         _serviceProvider = serviceProvider;
         _emailService = emailService;
         _emailTemplates = emailTemplates.Value;
+        _inspector = inspector;
 
         _logger = logger;
     }
@@ -79,8 +84,13 @@ public class ClaimService : IClaimService
 
             foreach (IFormFile photo in photos)
             {
-                string objectName = $"{claimToCreate.Id}/{Guid.NewGuid()}_{photo.FileName}";
                 using Stream stream = photo.OpenReadStream();
+
+                ValidateMimeType(stream, photo.FileName);
+
+                string objectName = $"{claimToCreate.Id}/{Guid.NewGuid()}_{photo.FileName}";
+                
+                stream.Seek(0, SeekOrigin.Begin);
                 string url = await _fileStorageService.UploadAsync(stream, objectName, photo.ContentType);
 
                 claimToCreate.UploadedPhotos.Add(new PersistedDocument
@@ -302,7 +312,7 @@ public class ClaimService : IClaimService
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to send {StatusLabel} email to {RecipientEmail} for claim under Policy {PolicyNumber}", statusLabelForLog, recipientEmail, claim.Policy.PolicyNumber);
+            _logger.LogDebug(ex, "Failed to send {StatusLabel} email to {RecipientEmail} for claim under Policy {PolicyNumber}", statusLabelForLog, recipientEmail, claim.Policy!.PolicyNumber);
         }
     }
 
@@ -316,6 +326,21 @@ public class ClaimService : IClaimService
         if (claim.GeneratedDocument != null)
         {
             claim.GeneratedDocument.FileUrl = await _fileStorageService.GeneratePresignedUrlAsync(claim.GeneratedDocument.GeneratedFileName!);
+        }
+    }
+
+    /// <summary>
+    /// Validate if a file has one of the accepted types
+    /// </summary>
+    /// <param name="fileStream">Stream of the file that will be validated</param>
+    /// <exception cref="InvalidOperationException">Thrown if the file</exception>
+    private void ValidateMimeType(Stream fileStream, string fileName)
+    {
+        FileFormat? format = _inspector.DetermineFileFormat(fileStream);
+
+        if(!(format is Image || format is Pdf))
+        {
+            throw new InvalidOperationException($"File {fileName} has a type that is not allowed. Accepted types: Image or PDF");
         }
     }
 }

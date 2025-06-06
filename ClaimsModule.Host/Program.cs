@@ -6,6 +6,7 @@ using ClaimsModule.Infrastructure.Config;
 using ClaimsModule.Infrastructure.Processors;
 using ClaimsModule.Infrastructure.Repositories;
 using ClaimsModule.Infrastructure.Services;
+using FileSignatures;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
@@ -75,6 +76,7 @@ namespace ClaimsModule.Host
             builder.Services.Configure<KestrelServerOptions>(options =>
                 options.Limits.MaxRequestBodySize = builder.Configuration.GetValue<int?>("Kestrel:Limits:MaxRequestBodySize") ?? 20971520);
 
+            builder.Services.AddSingleton<IFileFormatInspector>(new FileFormatInspector());
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IDecisionEngine, RuleBasedDecisionEngine>();
