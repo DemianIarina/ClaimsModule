@@ -135,7 +135,7 @@ public class ClaimService : IClaimService
         if (claim != null)
         {
             await RefreshPresignedUrls(claim);
-    }
+        }
 
         return claim;
     }
@@ -287,14 +287,18 @@ public class ClaimService : IClaimService
     {
         try
         {
-            string subject = subjectTemplate.Replace("{ClaimId}", claim.Id!);
+            string subject = subjectTemplate
+                .Replace("{PolicyNumber}", claim.Policy!.PolicyNumber!)
+                .Replace("{IncidentDate}", claim.IncidentTimestamp!.Value.ToString("yyyy-MM-dd"));
+
             string body = bodyTemplate
-                .Replace("{CustomerName}", claim.Policy!.Customer!.Name)
+                .Replace("{CustomerName}", claim.Policy.Customer!.Name)
                 .Replace("{EmployeeName}", claim.Policy.ResponsibleEmployee!.Name)
-                .Replace("{ClaimId}", claim.Id!);
+                .Replace("{PolicyNumber}", claim.Policy.PolicyNumber!)
+                .Replace("{IncidentDate}", claim.IncidentTimestamp!.Value.ToString("yyyy-MM-dd"));
 
             await _emailService.SendEmailAsync(recipientEmail, subject, body);
-            _logger.LogTrace("{StatusLabel} email sent to {RecipientEmail} for claim {ClaimId}", statusLabelForLog, recipientEmail, claim.Id);
+            _logger.LogTrace("{StatusLabel} email sent to {RecipientEmail} for claim under Policy {PolicyNumber}", statusLabelForLog, recipientEmail, claim.Policy.PolicyNumber);
         }
         catch (Exception ex)
         {
