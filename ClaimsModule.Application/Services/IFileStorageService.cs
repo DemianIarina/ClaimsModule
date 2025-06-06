@@ -17,4 +17,12 @@ public interface IFileStorageService
     /// <param name="contentType">The MIME type of the file (e.g., image/png, application/pdf).</param>
     /// <returns>A task that returns the public or presigned URL of the uploaded object.</returns>
     Task<string> UploadAsync(Stream stream, string objectName, string contentType);
+
+    /// <summary>
+    /// Generates a pre-signed URL that allows secure, temporary access to an object stored in file storage 
+    /// (e.g., MinIO) without requiring authentication.
+    /// </summary>
+    /// <param name="objectName">The key or path of the object in the storage bucket.</param>
+    /// <returns>A pre-signed URL as a string that can be used to download the object.</returns>
+    Task<string> GeneratePresignedUrlAsync(string objectName);
 }

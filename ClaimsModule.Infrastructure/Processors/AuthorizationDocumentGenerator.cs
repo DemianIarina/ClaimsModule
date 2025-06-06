@@ -6,6 +6,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Document = QuestPDF.Fluent.Document;
 
 namespace ClaimsModule.Infrastructure.Processors;
@@ -21,7 +22,7 @@ public class AuthorizationDocumentGenerator : IDocumentGenerator
         _fileStorage = fileStorage;
     }
 
-    public PersistedDocument GenerateAsync(Claim claim)
+    public async Task<PersistedDocument> GenerateAsync(Claim claim)
     {
         string fileName = $"Claim-{claim.Policy!.PolicyNumber}-{claim.SubmittedAt:yyyyMMddHHmmss}.pdf";
         string objectName = $"{claim.Id}/{fileName}";
@@ -104,15 +105,15 @@ public class AuthorizationDocumentGenerator : IDocumentGenerator
 
         memoryStream.Seek(0, SeekOrigin.Begin);
 
-        var fileUrl = _fileStorage.UploadAsync(memoryStream, objectName, "application/pdf").GetAwaiter().GetResult();
+        await _fileStorage.UploadAsync(memoryStream, objectName, "application/pdf");
 
-        _logger.LogInformation("PDF document generated at {Path}", fileUrl);
+        _logger.LogInformation("PDF document generated at {documentGeneratedFileName}", objectName);
 
         return new PersistedDocument
         {
             Id = Guid.NewGuid().ToString(),
-            FileName = fileName,
-            FileUrl = fileUrl,
+            OriginalFileName = fileName,
+            GeneratedFileName = objectName,
             ContentType = "application/pdf",
             CreatedAt = DateTime.UtcNow
         };

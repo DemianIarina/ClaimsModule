@@ -41,6 +41,7 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.Decision)
             .Include(c => c.GeneratedDocument)
             .Include(c => c.PolicyMatchResult)
+            .Include(c => c.UploadedPhotos)
             .FirstOrDefaultAsync(c => c.Id == id);
     }
 
@@ -53,6 +54,7 @@ public class ClaimRepository : IClaimRepository
             .Include(c => c.Decision)
             .Include(c => c.GeneratedDocument)
             .Include(c => c.PolicyMatchResult)
+            .Include(c => c.UploadedPhotos)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(filter.CustomerId))

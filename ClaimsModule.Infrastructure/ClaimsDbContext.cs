@@ -111,7 +111,6 @@ public class ClaimsDbContext : DbContext
         modelBuilder.Entity<PersistedDocument>(entity =>
         {
             entity.HasKey(g => g.Id);
-            entity.Property(g => g.FileUrl).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Policy>(entity =>

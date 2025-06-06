@@ -40,11 +40,16 @@ public class MinioFileStorageService : IFileStorageService
             .WithObjectSize(stream.Length)
             .WithContentType(contentType));
 
-        // Generate presigned URL (valid for 1 day)
+        return await GeneratePresignedUrlAsync(objectName);
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> GeneratePresignedUrlAsync(string objectName)
+    {
         var presignedUrl = await _minioClient.PresignedGetObjectAsync(new PresignedGetObjectArgs()
             .WithBucket(_bucketName)
             .WithObject(objectName)
-            .WithExpiry(60 * 60 * 7 * 24)); // 7 days in seconds
+            .WithExpiry(60 * 60 * 24)); // 1 days
 
         return presignedUrl;
     }

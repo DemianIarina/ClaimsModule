@@ -85,7 +85,8 @@ public class ClaimService : IClaimService
 
                 claimToCreate.UploadedPhotos.Add(new PersistedDocument
                 {
-                    FileName = photo.FileName,
+                    OriginalFileName = photo.FileName,
+                    GeneratedFileName = objectName,
                     ContentType = photo.ContentType,
                     FileUrl = url
                 });
@@ -117,13 +118,26 @@ public class ClaimService : IClaimService
         _logger.LogTrace("Fetching claims for filter {Filter}", filter);
         List<Claim> claims = await _claimRepository.GetListAsync(filter);
         _logger.LogTrace("Found {ClaimCount} claims for filter {Filter}", claims.Count, filter);
+
+        foreach (Claim claim in claims)
+        {
+            await RefreshPresignedUrls(claim);
+        }
+
         return claims;
     }
 
     /// <inheritdoc/>
     public async Task<Claim?> GetClaimByIdAsync(string id)
     {
-        return await _claimRepository.GetByIdAsync(id);
+        Claim? claim = await _claimRepository.GetByIdAsync(id);
+
+        if (claim != null)
+        {
+            await RefreshPresignedUrls(claim);
+    }
+
+        return claim;
     }
 
     /// <summary>
@@ -199,7 +213,7 @@ public class ClaimService : IClaimService
             switch (claim.Decision!.Type)
             {
                 case DecisionType.Approved:
-                    PersistedDocument doc = documentGenerator.GenerateAsync(claim);
+                    PersistedDocument doc = await documentGenerator.GenerateAsync(claim);
                     claim.GeneratedDocument = doc;
                     _logger.LogInformation("Document generated for approved claim {ClaimId} at {Path}", claim.Id, doc.FileUrl);
 
@@ -284,7 +298,20 @@ public class ClaimService : IClaimService
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Failed to send {StatusLabel} email to {RecipientEmail} for claim {ClaimId}", statusLabelForLog, recipientEmail, claim.Id);
+            _logger.LogDebug(ex, "Failed to send {StatusLabel} email to {RecipientEmail} for claim under Policy {PolicyNumber}", statusLabelForLog, recipientEmail, claim.Policy.PolicyNumber);
+        }
+    }
+
+    private async Task RefreshPresignedUrls(Claim claim)
+    {
+        foreach (PersistedDocument photo in claim.UploadedPhotos)
+        {
+            photo.FileUrl = await _fileStorageService.GeneratePresignedUrlAsync(photo.GeneratedFileName!);
+        }
+
+        if (claim.GeneratedDocument != null)
+        {
+            claim.GeneratedDocument.FileUrl = await _fileStorageService.GeneratePresignedUrlAsync(claim.GeneratedDocument.GeneratedFileName!);
         }
     }
 }

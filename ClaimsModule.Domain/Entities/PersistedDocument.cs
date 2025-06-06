@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ClaimsModule.Domain.Entities;
 
@@ -13,8 +14,9 @@ public class PersistedDocument
     public string? Id { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>
-    /// URL or path to the stored file.
+    /// URL for accessing the file.
     /// </summary>
+    [NotMapped]
     public string? FileUrl { get; set; }
 
     /// <summary>
@@ -25,7 +27,12 @@ public class PersistedDocument
     /// <summary>
     /// Original name of the file (optional, useful for display).
     /// </summary>
-    public string? FileName { get; set; }
+    public string? OriginalFileName { get; set; }
+
+    /// <summary>
+    /// Generated name of the file.
+    /// </summary>
+    public string? GeneratedFileName { get; set; }
 
     /// <summary>
     /// MIME type of the file (e.g., image/png).
