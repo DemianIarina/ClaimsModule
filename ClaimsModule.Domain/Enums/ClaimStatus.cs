@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Globalization;
 
 namespace ClaimsModule.Domain.Enums;
 
@@ -14,17 +13,22 @@ public static class ClaimStatus
     public const string Submitted = "Submitted";
 
     /// <summary>
-    /// The claim is currently being processed.
+    /// The claim has been approved.
     /// </summary>
-    public const string Processing = "Processing";
+    public const string Approved = "Approved";
 
     /// <summary>
-    /// The claim finished processing.
+    /// The claim has been rejected.
     /// </summary>
-    public const string Completed = "Completed";
+    public const string Rejected = "Rejected";
+
+    /// <summary>
+    /// The claim has been escalated to human review.
+    /// </summary>
+    public const string Escalated = "Escalated";
 
     /// <summary>
     /// A read-only list of all defined claim statuses.
     /// </summary>
-    public static IReadOnlyList<string> All => [Submitted, Processing, Completed];
+    public static IReadOnlyList<string> All => [Submitted, Approved, Rejected, Escalated];
 }

@@ -4,12 +4,15 @@ using ClaimsModule.Application.Repositories;
 using ClaimsModule.Application.Services;
 using ClaimsModule.Domain.Entities;
 using ClaimsModule.Domain.Enums;
+using ClaimsModule.Infrastructure.Config;
 using ClaimsModule.Infrastructure.Processors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace ClaimsModule.Infrastructure.Services;
@@ -24,24 +27,25 @@ public class ClaimService : IClaimService
     private readonly IClaimRepository _claimRepository;
     private readonly IPolicyRepository _policyRepository;
     private readonly IServiceProvider _serviceProvider;
-    //private readonly IDocumentRepository _documentRepository;
     private readonly IFileStorageService _fileStorageService;
+    private readonly IEmailService _emailService;
+    private readonly EmailTemplates _emailTemplates;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClaimService"/> class.
     /// </summary>
     /// <param name="claimRepository"></param>
     /// <param name="policyRepository"></param>
-    /// <param name="documentRepository"></param>
     /// <param name="fileStorageService"></param>
     public ClaimService(IClaimRepository claimRepository, IPolicyRepository policyRepository, IFileStorageService fileStorageService,
-        IServiceProvider serviceProvider, ILogger<ClaimService> logger)
+        IServiceProvider serviceProvider, IEmailService emailService, IOptions<EmailTemplates> emailTemplates, ILogger<ClaimService> logger)
     {
         _claimRepository = claimRepository;
         _policyRepository = policyRepository;
-        //_documentRepository = documentRepository;
         _fileStorageService = fileStorageService;
         _serviceProvider = serviceProvider;
+        _emailService = emailService;
+        _emailTemplates = emailTemplates.Value;
 
         _logger = logger;
     }
@@ -76,7 +80,7 @@ public class ClaimService : IClaimService
             foreach (IFormFile photo in photos)
             {
                 string objectName = $"{claimToCreate.Id}/{Guid.NewGuid()}_{photo.FileName}";
-                using var stream = photo.OpenReadStream();
+                using Stream stream = photo.OpenReadStream();
                 string url = await _fileStorageService.UploadAsync(stream, objectName, photo.ContentType);
 
                 claimToCreate.UploadedPhotos.Add(new PersistedDocument
@@ -98,7 +102,8 @@ public class ClaimService : IClaimService
 
     /// <inheritdoc/>
     public async Task<List<Claim>> GetClaimsByCustomerAsync(string customerId, string? policyId = null)
-        => await GetFilteredClaims(new ClaimFilter { 
+        => await GetFilteredClaims(new ClaimFilter
+        {
             CustomerId = customerId,
             PolicyId = policyId
         });
@@ -121,10 +126,15 @@ public class ClaimService : IClaimService
         return await _claimRepository.GetByIdAsync(id);
     }
 
+    /// <summary>
+    /// Evaluates automatically and informs the customer and the employee of the status of a <see cref="Claim"/> 
+    /// </summary>
+    /// <param name="claimId">The Id of the <see cref="Claim"/> that needs to be processed</param>
+    /// <exception cref="KeyNotFoundException"> When no <see cref="Claim"/> exists with the given Id.</exception>
     public async Task ProcessClaimAutomaticallyAsync(string claimId)
     {
         _logger.LogInformation("Started processing claim {ClaimId} at {Time}", claimId, DateTime.UtcNow);
-        
+
         // Resolve dependencies *inside this new scope*
         using var scope = _serviceProvider.CreateScope();
         var decisionEngine = scope.ServiceProvider.GetRequiredService<IDecisionEngine>();
@@ -192,19 +202,21 @@ public class ClaimService : IClaimService
                     PersistedDocument doc = documentGenerator.GenerateAsync(claim);
                     claim.GeneratedDocument = doc;
                     _logger.LogInformation("Document generated for approved claim {ClaimId} at {Path}", claim.Id, doc.FileUrl);
-                    break;
 
-                    //TODO: send email to employee, add claim to his responsability list, send email to client
-                    // - daca fail uieste send u de email la employee/ mai degraba daca da fail update u la responsability list - LogWarning
-                    // big problem, manual intervention needed, oricum update la claim (nu incurca nici daca nu se face, da macar sa tratam la fel)
-                    // oricum faci update la status, sa se poata continua 
-                    // - daca fail uieste send u la client - logDebug - dar trebe oricum sa si sa facem update la claim, ca data
-                    // viitoare cand intra clientul in app, sa vada statusu
+                    await SendNotificationEmail(claim, claim.Policy!.Customer!.Email, _emailTemplates.ClaimApprovedSubject, _emailTemplates.ClaimApprovedBody, "Approval");
+
+                    claim.Status = ClaimStatus.Approved;
+                    break;
                 case DecisionType.Escalated:
-                    //TODO: send email to client
-                    //  - daca fail uieste send u la client - logDebug - dar trebe oricum sa si sa facem update la claim, ca data
-                    // viitoare cand intra clientul in app, sa vada statusu
+                    await SendNotificationEmail(claim, claim.Policy!.Customer!.Email, _emailTemplates.ClaimEscalatedSubject, _emailTemplates.ClaimEscalatedBody, "Escalation");
+                    await SendNotificationEmail(claim, claim.Policy!.ResponsibleEmployee!.Email, _emailTemplates.ClaimEscalationAssignedSubject, _emailTemplates.ClaimEscalationAssignedBody, "EscalationToEmployee");
+
+                    claim.Status = ClaimStatus.Escalated;
+                    break;
                 case DecisionType.Rejected:
+                    await SendNotificationEmail(claim, claim.Policy!.Customer!.Email,_emailTemplates.ClaimRejectedSubject, _emailTemplates.ClaimRejectedBody, "Rejection");
+
+                    claim.Status = ClaimStatus.Rejected;
                     break;
             }
         }
@@ -238,7 +250,7 @@ public class ClaimService : IClaimService
     /// <returns>True if the metadata is valid; otherwise, false.</returns>
     private bool ValidateClaimMetadata(Policy? policy, Claim claim, string customerId)
     {
-        if(policy is null)
+        if (policy is null)
         {
             return false;
         }
@@ -255,5 +267,24 @@ public class ClaimService : IClaimService
             return false;
 
         return true;
+    }
+
+    private async Task SendNotificationEmail(Claim claim, string recipientEmail, string subjectTemplate, string bodyTemplate, string statusLabelForLog)
+    {
+        try
+        {
+            string subject = subjectTemplate.Replace("{ClaimId}", claim.Id!);
+            string body = bodyTemplate
+                .Replace("{CustomerName}", claim.Policy!.Customer!.Name)
+                .Replace("{EmployeeName}", claim.Policy.ResponsibleEmployee!.Name)
+                .Replace("{ClaimId}", claim.Id!);
+
+            await _emailService.SendEmailAsync(recipientEmail, subject, body);
+            _logger.LogTrace("{StatusLabel} email sent to {RecipientEmail} for claim {ClaimId}", statusLabelForLog, recipientEmail, claim.Id);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to send {StatusLabel} email to {RecipientEmail} for claim {ClaimId}", statusLabelForLog, recipientEmail, claim.Id);
+        }
     }
 }

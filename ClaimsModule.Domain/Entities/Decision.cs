@@ -33,7 +33,7 @@ public class Decision
 
     /// <summary>
     /// Current status of the claim.
-    /// Must have one of the values of <see cref="ClaimStatus"/>
+    /// Must have one of the values of <see cref="DecisionType"/>
     /// </summary>
     public string? Type
     {

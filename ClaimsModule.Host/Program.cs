@@ -7,6 +7,7 @@ using ClaimsModule.Infrastructure.Processors;
 using ClaimsModule.Infrastructure.Repositories;
 using ClaimsModule.Infrastructure.Services;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,8 +66,14 @@ namespace ClaimsModule.Host
                 .Build());
 
             // Add services to the container.
-            builder.Services.Configure<DecisionThresholds>(
-                builder.Configuration.GetSection("DecisionThresholds"));
+            builder.Services.Configure<DecisionThresholds>(builder.Configuration.GetSection("DecisionThresholds"));
+            builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("Smtp"));
+            builder.Services.Configure<EmailTemplates>(builder.Configuration.GetSection("EmailTemplates"));
+
+            builder.Services.AddScoped<IEmailService, GmailService>();
+
+            builder.Services.Configure<KestrelServerOptions>(options =>
+                options.Limits.MaxRequestBodySize = builder.Configuration.GetValue<int?>("Kestrel:Limits:MaxRequestBodySize") ?? 20971520);
 
             builder.Services.AddScoped<IUserRepository, UserRepository>();
             builder.Services.AddScoped<IAuthService, AuthService>();
