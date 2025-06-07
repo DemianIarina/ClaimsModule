@@ -4,6 +4,7 @@ using ClaimsModule.Domain.Entities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -34,6 +35,12 @@ public class AuthService : IAuthService
     /// <inheritdoc/>
     public async Task<string> AuthenticateAsync(string username, string password)
     {
+        var emailValidator = new EmailAddressAttribute();
+        if (!emailValidator.IsValid(username))
+        {
+            throw new ArgumentException("Username must be a valid email address.");
+        }
+
         AppUser? user = await _userRepository.GetByUsernameAsync(username);
         if (user is null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
         {
