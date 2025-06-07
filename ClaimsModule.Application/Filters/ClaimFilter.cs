@@ -19,4 +19,9 @@ public class ClaimFilter
     /// Optional filter to retrieve only claims created on a specific policy.
     /// </summary>
     public string? PolicyId { get; set; }
+
+    /// <summary>
+    /// Optional filter to retrieve only claims with a specific status
+    /// </summary>
+    public string? Status { get; set; }
 }

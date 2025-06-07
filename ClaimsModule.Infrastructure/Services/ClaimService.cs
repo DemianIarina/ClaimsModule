@@ -124,7 +124,7 @@ public class ClaimService : IClaimService
 
     /// <inheritdoc/>
     public async Task<List<Claim>> GetClaimsByEmpoyeeAsync(string employeeId)
-        => await GetFilteredClaims(new ClaimFilter { EmployeeId = employeeId });
+        => await GetFilteredClaims(new ClaimFilter { EmployeeId = employeeId, Status = ClaimStatus.Escalated });
 
     private async Task<List<Claim>> GetFilteredClaims(ClaimFilter filter)
     {

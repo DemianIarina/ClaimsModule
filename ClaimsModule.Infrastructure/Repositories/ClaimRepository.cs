@@ -37,7 +37,7 @@ public class ClaimRepository : IClaimRepository
         return await _context.Claims
             .Include(c => c.Policy)
                 .ThenInclude(p => p!.Customer)
-                .Include(c => c.AssignedEmployee)
+            .Include(c => c.AssignedEmployee)
             .Include(c => c.Decision)
             .Include(c => c.GeneratedDocument)
             .Include(c => c.PolicyMatchResult)
@@ -65,6 +65,9 @@ public class ClaimRepository : IClaimRepository
 
         if (!string.IsNullOrWhiteSpace(filter.PolicyId))
             query = query.Where(c => c.Policy!.Id == filter.PolicyId);
+
+        if(!string.IsNullOrWhiteSpace(filter.Status))
+            query = query.Where(c => c.Status == filter.Status);
 
         //Add ordering by customerId, and then by policyId
         query = query.OrderBy(c => c.Policy!.Customer!.Id)
