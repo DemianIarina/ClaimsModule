@@ -66,11 +66,7 @@ public class ClaimController : ControllerBase
 
         string? claimUri = Url.Action(nameof(GetClaimById), new { id = createdClaim.Id });
 
-        return Accepted(claimUri, new ClaimResponse
-        {
-            ClaimId = createdClaim.Id!,
-            Status = createdClaim.Status!
-        });
+        return Accepted(claimUri);
     }
 
     [HttpGet("{id:guid}")]
@@ -86,7 +82,16 @@ public class ClaimController : ControllerBase
         return Ok(new ClaimResponse
         {
             ClaimId = claim.Id!,
-            Status = claim.Status!
+            IncidentDateTime = claim.IncidentTimestamp!,
+            IncidentLocation = claim.IncidentLocation!,
+            DamageType = claim.DamageType!,
+            WasAnyoneInjured = claim.WasAnyoneInjured!,
+            AreasDamaged = claim.AreasDamaged!,
+            Status = claim.Status!,
+            CustomerName = claim.Policy!.Customer!.Name,
+            AttachedPhotosUrls = claim.UploadedPhotos?.Count() > 0 ? claim.UploadedPhotos.Select(p => p.FileUrl).ToList()! : new List<string>(),
+            GeneratedDocumentUrl = claim.GeneratedDocument?.FileUrl,
+            FullDescription = claim.Description
         });
     }
 
@@ -103,10 +108,19 @@ public class ClaimController : ControllerBase
 
         List<Claim> claims = await _claimService.GetClaimsByEmpoyeeAsync(employeeId!);
 
-        var result = claims.Select(c => new ClaimResponse
+        var result = claims.Select(claim => new ClaimResponse
         {
-            ClaimId = c.Id!,
-            Status = c.Status!
+            ClaimId = claim.Id!,
+            IncidentDateTime = claim.IncidentTimestamp!,
+            IncidentLocation = claim.IncidentLocation!,
+            DamageType = claim.DamageType!,
+            WasAnyoneInjured = claim.WasAnyoneInjured!,
+            AreasDamaged = claim.AreasDamaged!,
+            Status = claim.Status!,
+            CustomerName = claim.Policy!.Customer!.Name,
+            AttachedPhotosUrls = claim.UploadedPhotos?.Count() > 0 ? claim.UploadedPhotos.Select(p => p.FileUrl).ToList()! : new List<string>(),
+            GeneratedDocumentUrl = claim.GeneratedDocument?.FileUrl,
+            FullDescription = claim.Description
         }).ToList();
 
         return Ok(result);
@@ -125,10 +139,19 @@ public class ClaimController : ControllerBase
 
         List<Claim> claims = await _claimService.GetClaimsByCustomerAsync(customerId!, policyId);
 
-        var result = claims.Select(c => new ClaimResponse
+        var result = claims.Select(claim => new ClaimResponse
         {
-            ClaimId = c.Id!,
-            Status = c.Status!
+            ClaimId = claim.Id!,
+            IncidentDateTime = claim.IncidentTimestamp!,
+            IncidentLocation = claim.IncidentLocation!,
+            DamageType = claim.DamageType!,
+            WasAnyoneInjured = claim.WasAnyoneInjured!,
+            AreasDamaged = claim.AreasDamaged!,
+            Status = claim.Status!,
+            CustomerName = claim.Policy!.Customer!.Name,
+            AttachedPhotosUrls = claim.UploadedPhotos?.Count() > 0 ? claim.UploadedPhotos.Select(p => p.FileUrl).ToList()! : new List<string>(),
+            GeneratedDocumentUrl = claim.GeneratedDocument?.FileUrl,
+            FullDescription = claim.Description
         }).ToList();
 
         return Ok(result);

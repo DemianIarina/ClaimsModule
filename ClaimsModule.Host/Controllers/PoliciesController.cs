@@ -58,20 +58,20 @@ public class PoliciesController : ControllerBase
         {
             Customer = new CustomerDto
             {
-                Id = customer.Id!,
-                FullName = customer.Name!,
-                Email = customer.Email!
+                Id = customer.Id,
+                FullName = customer.Name,
+                Email = customer.Email
             },
             Policies = policies.Select(p => new PolicyDto
             {
-                Id = p.Id!,
-                PolicyNumber = p.PolicyNumber!,
-                CarPlateNumber = p.CarPlateNumber!,
-                CarBrand = p.CarBrand!,
-                CarModel = p.CarModel!,
+                Id = p.Id,
+                PolicyNumber = p.PolicyNumber,
+                CarPlateNumber = p.CarPlateNumber,
+                CarBrand = p.CarBrand,
+                CarModel = p.CarModel,
                 ValidFrom = p.ValidFrom,
                 ValidTo = p.ValidTo,
-                DocumentReference = p.PolicyDocument!.FileUrl!
+                DocumentReference = p.PolicyDocument!.FileUrl
             }).ToList()
         };
 

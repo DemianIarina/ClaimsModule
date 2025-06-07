@@ -9,15 +9,15 @@ public class CustomerDto
     /// <summary>
     /// Unique identifier of the customer
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public string? Id { get; set; }
 
     /// <summary>
     /// Full name of the customer
     /// </summary>
-    public string FullName { get; set; } = string.Empty;
+    public string? FullName { get; set; }
 
     /// <summary>
     /// Email address of the customer
     /// </summary>
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 }

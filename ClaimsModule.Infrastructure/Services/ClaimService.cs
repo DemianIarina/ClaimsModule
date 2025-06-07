@@ -319,9 +319,12 @@ public class ClaimService : IClaimService
 
     private async Task RefreshPresignedUrls(Claim claim)
     {
-        foreach (PersistedDocument photo in claim.UploadedPhotos)
+        if(claim.UploadedPhotos is not null)
         {
-            photo.FileUrl = await _fileStorageService.GeneratePresignedUrlAsync(photo.GeneratedFileName!);
+            foreach (PersistedDocument photo in claim.UploadedPhotos)
+            {
+                photo.FileUrl = await _fileStorageService.GeneratePresignedUrlAsync(photo.GeneratedFileName!);
+            }
         }
 
         if (claim.GeneratedDocument != null)

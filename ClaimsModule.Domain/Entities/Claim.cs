@@ -35,7 +35,7 @@ public class Claim
     /// <summary>
     /// Indicates whether anyone was injured in the incident.
     /// </summary>
-    public bool WasAnyoneInjured { get; set; }
+    public bool? WasAnyoneInjured { get; set; }
 
     /// <summary>
     /// Areas of the vehicle that were damaged
@@ -86,7 +86,7 @@ public class Claim
     /// <summary>
     /// The uploaded photos provided by the customer.
     /// </summary>
-    public List<PersistedDocument> UploadedPhotos { get; set; } = new();
+    public List<PersistedDocument>? UploadedPhotos { get; set; } = new();
 
     /// <summary>
     /// The <see cref="Decision"/> made for the claim after automatic review.
