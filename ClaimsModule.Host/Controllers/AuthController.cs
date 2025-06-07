@@ -11,7 +11,6 @@ namespace ClaimsModule.Host.Controllers;
 /// Exposes endpoints for authenticating users and generating JWT tokens.
 /// </summary>
 [ApiController]
-[Route("auth")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
